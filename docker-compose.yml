@@ -1,0 +1,42 @@
+# [Phase: MVP v1] Docker Compose for local development & PostgreSQL
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dota2_platform_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-dota2_tournaments}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d dota2_tournaments']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dota2_platform_app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/dota2_tournaments?schema=public
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      STEAM_API_KEY: ${STEAM_API_KEY}
+      STRATZ_TOKEN: ${STRATZ_TOKEN:-}
+      SESSION_SECRET: ${SESSION_SECRET:-change_me_at_least_32_bytes_secret_key_for_prod}
+    ports:
+      - '3000:3000'
+
+volumes:
+  postgres_data:

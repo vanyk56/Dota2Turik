@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* [Phase: MVP v1] Design System Tokens (Section 12 - Railway Dark Minimalist Theme) */
+:root {
+  --bg: #0B0B12;
+  --bg-elevated: #12121B;
+  --glass: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --accent: #8B5CF6;
+  --accent-soft: rgba(139, 92, 246, 0.15);
+  --accent-glow: 0 0 24px rgba(139, 92, 246, 0.25);
+  --text: #F4F4F8;
+  --text-muted: #9494A8;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --dot-size: 1px;
+  --dot-gap: 24px;
+  --dot-color: rgba(255, 255, 255, 0.06);
+}
+
+* {
+  box-sizing: border-box;
+  border-color: var(--glass-border);
+}
+
+html,
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Infinite Dot Matrix Canvas Background */
+.bg-dot-matrix {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--dot-color) var(--dot-size), transparent var(--dot-size));
+  background-size: var(--dot-gap) var(--dot-gap);
+}
+
+/* Glassmorphism Surface (max 2 levels per Section 12) */
+.glass-panel {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-elevated {
+  background: rgba(18, 18, 27, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+/* Focus Accessibility (WCAG AA) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* React Flow Customizations */
+.react-flow__attribution {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  opacity: 0.4;
+}
+
+.react-flow__controls {
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+  overflow: hidden;
+  box-shadow: none !important;
+}
+
+.react-flow__controls-button {
+  background: var(--bg-elevated) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  fill: var(--text) !important;
+  color: var(--text) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--accent-soft) !important;
+}
