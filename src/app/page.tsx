@@ -1,9 +1,23 @@
 // [Phase: MVP v1] Home / Landing Page — Powered Strictly by Real Module Services & DB
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { Swords, Users, Trophy, Calendar, ArrowRight, Plus } from 'lucide-react';
+import {
+  Swords,
+  Gamepad2,
+  Lock,
+  Unlock,
+  Users,
+  Trophy,
+  Calendar,
+  ArrowRight,
+  Plus,
+} from 'lucide-react';
 import { getCurrentUser } from '@/modules/auth/service';
 import { listTournaments } from '@/modules/tournaments/service';
+import {
+  listCustomLobbies,
+  LOBBY_GAME_MODE_LABELS,
+} from '@/modules/lobbies/service';
 import { searchTeamsCatalog } from '@/modules/catalog/service';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,9 +31,10 @@ export default async function HomePage({
 }: {
   searchParams?: { authError?: string };
 }) {
-  const [user, tournaments, catalog, t] = await Promise.all([
+  const [user, tournaments, lobbies, catalog, t] = await Promise.all([
     getCurrentUser(),
     listTournaments(),
+    listCustomLobbies({ limit: 6 }),
     searchTeamsCatalog({ limit: 6, sortBy: 'rating' }),
     getTranslations('home'),
   ]);
@@ -63,6 +78,12 @@ export default async function HomePage({
                   {t('exploreTournaments')}
                 </Button>
               </Link>
+              <Link href="/lobbies">
+                <Button variant="secondary" size="lg">
+                  <Gamepad2 className="h-4 w-4 text-accent" />
+                  Лобби (Лобаки 5x5)
+                </Button>
+              </Link>
               <Link href="/teams">
                 <Button variant="secondary" size="lg">
                   <Users className="h-4 w-4 text-accent" />
@@ -70,10 +91,10 @@ export default async function HomePage({
                 </Button>
               </Link>
               {user && (
-                <Link href="/tournaments/new">
+                <Link href="/lobbies/new">
                   <Button variant="outline" size="lg">
                     <Plus className="h-4 w-4 text-accent" />
-                    Создать турнир
+                    Создать лобби
                   </Button>
                 </Link>
               )}
@@ -111,6 +132,101 @@ export default async function HomePage({
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Active Custom Lobbies ("Лобби / Лобаки") */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-text flex items-center gap-2">
+            <Gamepad2 className="h-5 w-5 text-accent" />
+            Открытые и приватные лобби (Лобаки 5x5 и 1x1)
+          </h2>
+          <div className="flex items-center gap-3">
+            {user && (
+              <Link href="/lobbies/new">
+                <Button variant="secondary" size="sm">
+                  <Plus className="h-3.5 w-3.5 text-accent" />
+                  Создать лобби
+                </Button>
+              </Link>
+            )}
+            <Link
+              href="/lobbies"
+              className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
+            >
+              Все лобби
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+
+        {lobbies.length === 0 ? (
+          <EmptyState
+            title="Открытых лобби пока нет"
+            description="Создайте первый открытый лобак со свободным входом или комнату по паролю для друзей."
+            actionLabel={user ? 'Создать лобби' : 'Войти через Steam'}
+            actionHref={user ? '/lobbies/new' : '/api/auth/steam/login'}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {lobbies.slice(0, 3).map((lobby) => (
+              <Card
+                key={lobby.id}
+                className="flex flex-col justify-between gap-4 hover:border-white/20"
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <StatusBadge
+                      status={lobby.status}
+                      label={
+                        lobby.status === 'waiting'
+                          ? 'Открыт набор'
+                          : lobby.status === 'in_progress'
+                            ? 'LIVE'
+                            : 'Завершён'
+                      }
+                    />
+                    {lobby.hasPassword ? (
+                      <span className="inline-flex items-center gap-1 rounded-sm bg-accent/15 border border-accent/40 px-2 py-0.5 text-xs font-semibold text-accent">
+                        <Lock className="h-3 w-3" />
+                        По паролю
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-sm bg-success/15 border border-success/30 px-2 py-0.5 text-xs font-semibold text-success">
+                        <Unlock className="h-3 w-3" />
+                        Свободный вход
+                      </span>
+                    )}
+                  </div>
+
+                  <Link
+                    href={`/lobbies/${lobby.id}`}
+                    className="block text-lg font-bold text-text hover:text-accent transition-colors"
+                  >
+                    {lobby.name}
+                  </Link>
+
+                  <p className="text-xs text-text-muted line-clamp-2">
+                    {lobby.description ||
+                      `${LOBBY_GAME_MODE_LABELS[lobby.gameMode]} • Сервер: ${lobby.serverLocation}`}
+                  </p>
+                </div>
+
+                <div className="pt-3 border-t border-glass-border flex items-center justify-between text-xs text-text-muted">
+                  <span>
+                    Хост: <strong className="text-text">{lobby.host.nickname}</strong>
+                  </span>
+                  <span className="font-mono">
+                    Слоты:{' '}
+                    <strong className="text-accent">
+                      {lobby.activePlayersCount}/{lobby.maxPlayers}
+                    </strong>
+                  </span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Featured Tournaments */}

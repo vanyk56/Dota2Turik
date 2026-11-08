@@ -1,6 +1,7 @@
 {
   "nav": {
     "tournaments": "Турниры",
+    "lobbies": "Лобби (Лобаки)",
     "teams": "Команды",
     "leaderboard": "Рейтинг",
     "admin": "Админ-панель",
@@ -8,6 +9,7 @@
     "signInSteam": "Войти через Steam",
     "signOut": "Выйти",
     "createTeam": "Создать команду",
+    "createLobby": "Создать лобби",
     "createTournament": "Создать турнир"
   },
   "home": {

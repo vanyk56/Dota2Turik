@@ -1,6 +1,7 @@
 {
   "nav": {
     "tournaments": "Tournaments",
+    "lobbies": "Lobbies",
     "teams": "Teams",
     "leaderboard": "Leaderboard",
     "admin": "Admin Panel",
@@ -8,6 +9,7 @@
     "signInSteam": "Sign in with Steam",
     "signOut": "Sign out",
     "createTeam": "Create Team",
+    "createLobby": "Create Lobby",
     "createTournament": "Create Tournament"
   },
   "home": {

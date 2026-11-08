@@ -12,6 +12,7 @@ export type BadgeStatusType =
   | 'finished'
   | 'scheduled'
   | 'registration'
+  | 'waiting'
   | 'awaiting_confirmation'
   | 'disputed'
   | 'draft'
@@ -36,6 +37,7 @@ const DEFAULT_LABELS: Record<string, string> = {
   finished: 'Finished',
   scheduled: 'Scheduled',
   registration: 'Registration',
+  waiting: 'Открыт набор',
   awaiting_confirmation: 'Confirming',
   disputed: 'Disputed',
   draft: 'Draft',
@@ -50,7 +52,10 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
   const displayLabel = label ?? DEFAULT_LABELS[normalized] ?? status;
 
   const isSuccess =
-    normalized === 'active' || normalized === 'approved' || normalized === 'registration';
+    normalized === 'active' ||
+    normalized === 'approved' ||
+    normalized === 'registration' ||
+    normalized === 'waiting';
   const isWarning =
     normalized === 'recruiting' ||
     normalized === 'awaiting_confirmation' ||

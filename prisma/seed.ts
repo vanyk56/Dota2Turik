@@ -5,8 +5,85 @@ import {
   generateSingleEliminationBracket,
 } from '../src/modules/brackets/engine';
 import { DEFAULT_RATING_FORMULA_CONFIG } from '../src/modules/ratings/engine';
+import { hashPassword } from '../src/server/crypto';
 
 const prisma = new PrismaClient();
+
+async function ensureDemoLobbies() {
+  const existingLobbies = await prisma.customLobby.count().catch(() => 0);
+  if (existingLobbies > 0) return;
+
+  const users = await prisma.user.findMany({ take: 8, orderBy: { createdAt: 'asc' } });
+  if (users.length === 0 || !users[0]) return;
+
+  const host = users[0];
+
+  // 1. Open 5v5 All Pick Lobby (Свободный вход)
+  const openLobby = await prisma.customLobby.create({
+    data: {
+      name: 'Вечерний открытый лобак 5x5 (All Pick)',
+      description:
+        'Свободный вход без пароля! Заходите на любые свободные позиции за Силы Света или Силы Тьмы.',
+      hostId: host.id,
+      status: 'waiting',
+      gameMode: 'all_pick',
+      region: 'EEU',
+      serverLocation: 'Stockholm (EU North)',
+      maxPlayers: 10,
+      passwordHash: null,
+      dotaLobbyName: 'Dota turnir — Open 5x5 #1',
+      dotaLobbyPassword: 'dt777',
+    },
+  });
+
+  // Add a few players into the open lobby leaving slots free for the user to join
+  const sampleSides: Array<{ side: 'radiant' | 'dire'; slot: number }> = [
+    { side: 'radiant', slot: 1 },
+    { side: 'radiant', slot: 2 },
+    { side: 'dire', slot: 1 },
+    { side: 'dire', slot: 2 },
+  ];
+  for (let i = 0; i < Math.min(users.length, sampleSides.length); i++) {
+    await prisma.lobbyParticipant.create({
+      data: {
+        lobbyId: openLobby.id,
+        userId: users[i]!.id,
+        side: sampleSides[i]!.side,
+        slot: sampleSides[i]!.slot,
+        isReady: true,
+      },
+    });
+  }
+
+  // 2. Password-Protected 5v5 Captains Mode Lobby (По паролю: "dota")
+  const secondHost = users[1] ?? host;
+  const privateLobby = await prisma.customLobby.create({
+    data: {
+      name: 'Закрытый КВ / Пракк 5x5 (Пароль: dota)',
+      description:
+        'Тренировочное лобби Captains Mode по паролю (тестовый пароль для входа: dota).',
+      hostId: secondHost.id,
+      status: 'waiting',
+      gameMode: 'captains_mode',
+      region: 'WEU',
+      serverLocation: 'Luxembourg (EU West)',
+      maxPlayers: 10,
+      passwordHash: hashPassword('dota'),
+      dotaLobbyName: 'Dota turnir — Scrim CM #2',
+      dotaLobbyPassword: 'dota',
+    },
+  });
+
+  await prisma.lobbyParticipant.create({
+    data: {
+      lobbyId: privateLobby.id,
+      userId: secondHost.id,
+      side: 'radiant',
+      slot: 1,
+      isReady: true,
+    },
+  });
+}
 
 const SEED_TEAMS = [
   { name: 'Team Spirit', tag: 'TS', country: 'RU', region: 'EEU', rating: 1850 },
@@ -51,6 +128,7 @@ async function main() {
         },
       })
       .catch(() => null);
+    await ensureDemoLobbies().catch(() => null);
     return;
   }
 
@@ -334,8 +412,10 @@ async function main() {
     }
   }
 
+  await ensureDemoLobbies().catch(() => null);
+
   console.log(
-    '✅ Seed completed: 16 teams, 1 registration tournament, 1 in_progress tournament with partially played bracket.',
+    '✅ Seed completed: 16 teams, 1 registration tournament, 1 in_progress tournament with partially played bracket, and 2 demo lobbies.',
   );
 }
 

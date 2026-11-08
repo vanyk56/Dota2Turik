@@ -88,6 +88,27 @@ enum StatsSyncStatus {
   pending
 }
 
+enum LobbyStatus {
+  waiting
+  in_progress
+  finished
+  cancelled
+}
+
+enum LobbyGameMode {
+  all_pick
+  captains_mode
+  mid_only
+  random_draft
+  turbo
+}
+
+enum LobbySide {
+  radiant
+  dire
+  spectator
+}
+
 model User {
   id           String    @id @default(cuid())
   steamId64    String    @unique
@@ -101,20 +122,22 @@ model User {
   isBlocked    Boolean   @default(false)
   isAnonymized Boolean   @default(false)
 
-  sessions           Session[]
-  memberships        TeamMembership[]
-  createdInvites     TeamInvite[]     @relation("InviteCreator")
-  consumedInvites    TeamInvite[]     @relation("InviteConsumer")
-  joinRequests       JoinRequest[]    @relation("JoinRequester")
-  decidedRequests    JoinRequest[]    @relation("JoinDecider")
-  teamHistorySubject TeamHistory[]    @relation("TeamHistorySubject")
-  teamHistoryActor   TeamHistory[]    @relation("TeamHistoryActor")
-  organizedTourneys  Tournament[]     @relation("TournamentOrganizer")
-  submittedResults   MatchResult[]    @relation("ResultSubmitterUser")
-  openedDisputes     MatchDispute[]   @relation("DisputeOpener")
-  resolvedDisputes   MatchDispute[]   @relation("DisputeResolver")
-  createdFormulas    RatingFormula[]  @relation("FormulaCreator")
-  auditLogs          AuditLog[]       @relation("AuditActor")
+  sessions            Session[]
+  memberships         TeamMembership[]
+  createdInvites      TeamInvite[]       @relation("InviteCreator")
+  consumedInvites     TeamInvite[]       @relation("InviteConsumer")
+  joinRequests        JoinRequest[]      @relation("JoinRequester")
+  decidedRequests     JoinRequest[]      @relation("JoinDecider")
+  teamHistorySubject  TeamHistory[]      @relation("TeamHistorySubject")
+  teamHistoryActor    TeamHistory[]      @relation("TeamHistoryActor")
+  organizedTourneys   Tournament[]       @relation("TournamentOrganizer")
+  submittedResults    MatchResult[]      @relation("ResultSubmitterUser")
+  openedDisputes      MatchDispute[]     @relation("DisputeOpener")
+  resolvedDisputes    MatchDispute[]     @relation("DisputeResolver")
+  createdFormulas     RatingFormula[]    @relation("FormulaCreator")
+  auditLogs           AuditLog[]         @relation("AuditActor")
+  hostedLobbies       CustomLobby[]      @relation("LobbyHost")
+  lobbyParticipations LobbyParticipant[] @relation("LobbyPlayer")
 
   @@index([nickname])
   @@index([role, isBlocked])
@@ -449,4 +472,46 @@ model RateLimitEntry {
   resetAt DateTime
 
   @@index([resetAt])
+}
+
+model CustomLobby {
+  id                String        @id @default(cuid())
+  name              String
+  description       String?
+  hostId            String
+  status            LobbyStatus   @default(waiting)
+  gameMode          LobbyGameMode @default(all_pick)
+  region            String        @default("EEU")
+  serverLocation    String        @default("Stockholm")
+  maxPlayers        Int           @default(10)
+  passwordHash      String?
+  dotaLobbyName     String?
+  dotaLobbyPassword String?
+  winnerSide        LobbySide?
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  createdAt         DateTime      @default(now())
+
+  host         User               @relation("LobbyHost", fields: [hostId], references: [id], onDelete: Cascade)
+  participants LobbyParticipant[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([hostId])
+}
+
+model LobbyParticipant {
+  id       String    @id @default(cuid())
+  lobbyId  String
+  userId   String
+  side     LobbySide @default(radiant)
+  slot     Int       @default(1)
+  isReady  Boolean   @default(false)
+  joinedAt DateTime  @default(now())
+
+  lobby CustomLobby @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  user  User        @relation("LobbyPlayer", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([lobbyId, userId])
+  @@index([lobbyId, side, slot])
+  @@index([userId])
 }

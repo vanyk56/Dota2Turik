@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import {
   Swords,
+  Gamepad2,
   Users,
   Trophy,
   ShieldCheck,
@@ -55,6 +56,13 @@ export async function Navbar() {
               {t('tournaments')}
             </Link>
             <Link
+              href="/lobbies"
+              className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted hover:text-text hover:bg-white/[0.04] transition-colors"
+            >
+              <Gamepad2 className="h-4 w-4 text-accent" />
+              {t('lobbies')}
+            </Link>
+            <Link
               href="/teams"
               className="flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium text-text-muted hover:text-text hover:bg-white/[0.04] transition-colors"
             >
@@ -101,6 +109,13 @@ export async function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-2">
+              <Link href="/lobbies/new" className="hidden lg:inline-flex">
+                <Button variant="secondary" size="sm">
+                  <Gamepad2 className="h-3.5 w-3.5 text-accent" />
+                  {t('createLobby')}
+                </Button>
+              </Link>
+
               <Link href="/teams/new" className="hidden sm:inline-flex">
                 <Button variant="secondary" size="sm">
                   <Plus className="h-3.5 w-3.5 text-accent" />
