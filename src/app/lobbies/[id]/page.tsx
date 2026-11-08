@@ -25,6 +25,8 @@ import {
   getCustomLobbyById,
   LOBBY_GAME_MODE_LABELS,
 } from '@/modules/lobbies/service';
+import { getDotaBotStatus } from '@/modules/lobbies/dota-gc-bot';
+import { SteamBotCard } from '@/components/lobbies/steam-bot-card';
 import {
   joinLobbyAction,
   kickLobbyPlayerAction,
@@ -64,14 +66,13 @@ export default async function LobbyDetailPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams?: { error?: string };
+  searchParams?: { error?: string; botInvited?: string };
 }) {
   const user = await getCurrentUser();
-  const lobby = await getCustomLobbyById(
-    params.id,
-    user?.id ?? null,
-    user?.role ?? null,
-  );
+  const [lobby, botStatus] = await Promise.all([
+    getCustomLobbyById(params.id, user?.id ?? null, user?.role ?? null),
+    getDotaBotStatus(),
+  ]);
 
   if (!lobby) {
     notFound();
@@ -144,6 +145,26 @@ export default async function LobbyDetailPage({
           <AlertTriangle className="h-5 w-5 shrink-0" />
           <span>{errorMessage}</span>
         </div>
+      )}
+
+      {searchParams?.botInvited === '1' && (
+        <div className="flex items-center gap-3 rounded-md border border-success/40 bg-success/15 px-4 py-3 text-sm text-success">
+          <CheckCircle2 className="h-5 w-5 shrink-0" />
+          <span>
+            Steam-бот создал лобби в Dota 2 и отправил приглашение! Проверьте всплывающее окно в клиенте Dota 2 (или найдите лобби по паролю во вкладке «Частные лобби»).
+          </span>
+        </div>
+      )}
+
+      {/* Steam Dota 2 GC Bot Panel */}
+      {user && (lobby.canManage || lobby.isParticipant) && (
+        <SteamBotCard
+          botStatus={botStatus}
+          returnTo={`/lobbies/${lobby.id}`}
+          lobbyId={lobby.id}
+          canManageLobby={lobby.canManage}
+          isParticipant={lobby.isParticipant}
+        />
       )}
 
       {/* Lobby Header Card */}

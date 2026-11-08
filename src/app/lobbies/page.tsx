@@ -16,8 +16,10 @@ import {
   listCustomLobbies,
   LOBBY_GAME_MODE_LABELS,
 } from '@/modules/lobbies/service';
+import { getDotaBotStatus } from '@/modules/lobbies/dota-gc-bot';
 import { joinLobbyAction } from '@/modules/lobbies/actions';
 import { PLATFORM_CONFIG } from '@/lib/config';
+import { SteamBotCard } from '@/components/lobbies/steam-bot-card';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input, Select } from '@/components/ui/input';
@@ -47,14 +49,17 @@ export default async function LobbiesPage({
   const gameMode = searchParams?.gameMode ?? 'ALL';
   const region = searchParams?.region ?? 'ALL';
 
-  const user = await getCurrentUser();
-  const lobbies = await listCustomLobbies({
-    query,
-    access,
-    status,
-    gameMode,
-    region,
-  });
+  const [user, lobbies, botStatus] = await Promise.all([
+    getCurrentUser(),
+    listCustomLobbies({
+      query,
+      access,
+      status,
+      gameMode,
+      region,
+    }),
+    getDotaBotStatus(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -76,6 +81,8 @@ export default async function LobbiesPage({
           )
         }
       />
+
+      {user && <SteamBotCard botStatus={botStatus} returnTo="/lobbies" />}
 
       <form method="GET" action="/lobbies">
         <FilterBar>

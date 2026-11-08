@@ -11,6 +11,12 @@ import {
 } from '@/server/permissions';
 import { checkRateLimit } from '@/server/rate-limit';
 import { recordAuditLog } from '@/modules/audit/service';
+import {
+  botCreateDotaLobbyAndInvite,
+  botInvitePlayerToDotaLobby,
+  botLaunchDotaLobby,
+  getDotaBotStatus,
+} from './dota-gc-bot';
 
 export const CreateLobbyInputSchema = z.object({
   name: z.string().trim().min(3, 'Название от 3 символов').max(80),
@@ -131,6 +137,24 @@ export async function createCustomLobby(
       hasPassword: Boolean(passwordHash),
     },
   });
+
+  // If the Steam Dota 2 GC Bot is online and ready, automatically spawn the real lobby in Dota 2 and invite the host
+  const botStatus = await getDotaBotStatus();
+  if (botStatus.isReady) {
+    const hostUser = await prisma.user.findUnique({
+      where: { id: actor.id },
+      select: { steamId64: true },
+    });
+    void botCreateDotaLobbyAndInvite({
+      lobbyId: lobby.id,
+      gameName: defaultDotaName,
+      passKey: defaultDotaPass,
+      gameMode: lobby.gameMode,
+      serverLocation: lobby.serverLocation,
+      region: lobby.region,
+      steamIds64: hostUser?.steamId64 ? [hostUser.steamId64] : [],
+    });
+  }
 
   return lobby;
 }
@@ -448,6 +472,18 @@ export async function joinCustomLobby(
     },
   });
 
+  // Automatically send Dota 2 in-game invite if the GC Bot is active for this lobby
+  const botStatus = await getDotaBotStatus();
+  if (botStatus.isReady && botStatus.activeLobbyId === lobby.id) {
+    const joinedUser = await prisma.user.findUnique({
+      where: { id: actor.id },
+      select: { steamId64: true },
+    });
+    if (joinedUser?.steamId64) {
+      botInvitePlayerToDotaLobby(joinedUser.steamId64);
+    }
+  }
+
   return participant;
 }
 
@@ -715,6 +751,13 @@ export async function updateCustomLobbyStatus(
       finishedAt: status === 'finished' ? new Date() : null,
     },
   });
+
+  if (status === 'in_progress') {
+    const botStatus = await getDotaBotStatus();
+    if (botStatus.isReady && botStatus.activeLobbyId === lobbyId) {
+      botLaunchDotaLobby();
+    }
+  }
 
   await recordAuditLog({
     actorId: actor.id,

@@ -515,3 +515,15 @@ model LobbyParticipant {
   @@index([lobbyId, side, slot])
   @@index([userId])
 }
+
+model SteamBotConfig {
+  id           String   @id @default("singleton")
+  accountName  String?
+  password     String?
+  refreshToken String?
+  status       String   @default("disconnected")
+  guardDomain  String?
+  lastError    String?
+  activeLobbyId String?
+  updatedAt    DateTime @updatedAt
+}

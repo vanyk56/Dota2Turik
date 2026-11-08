@@ -15,7 +15,15 @@ import {
   toggleCustomLobbyReady,
   updateCustomLobbyAccess,
   updateCustomLobbyStatus,
+  getCustomLobbyById,
 } from './service';
+import {
+  botCreateDotaLobbyAndInvite,
+  botInvitePlayerToDotaLobby,
+  disconnectDotaBot,
+  startBotConnection,
+  submitBotSteamGuardCode,
+} from './dota-gc-bot';
 
 export async function createLobbyAction(formData: FormData) {
   const user = await getCurrentUser();
@@ -200,4 +208,90 @@ export async function updateLobbyStatusAction(formData: FormData) {
   revalidatePath(`/lobbies/${lobbyId}`);
   revalidatePath('/lobbies');
   revalidatePath('/');
+}
+
+export async function connectSteamBotAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('UNAUTHORIZED');
+
+  const accountName = String(formData.get('accountName') ?? '').trim();
+  const password = String(formData.get('password') ?? '').trim();
+  const returnTo = String(formData.get('returnTo') ?? '/lobbies');
+
+  if (accountName.length >= 2 && password.length >= 2) {
+    await startBotConnection({ accountName, password });
+    // Wait briefly so Steam either logs on or emits steamGuard event before page re-renders
+    await new Promise((r) => setTimeout(r, 2500));
+  }
+
+  revalidatePath('/lobbies');
+  revalidatePath(returnTo);
+}
+
+export async function submitSteamGuardAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('UNAUTHORIZED');
+
+  const code = String(formData.get('guardCode') ?? '').trim();
+  const returnTo = String(formData.get('returnTo') ?? '/lobbies');
+
+  if (code.length >= 4) {
+    await submitBotSteamGuardCode(code);
+    // Wait briefly for Steam login + Dota 2 GC handshake (4006 -> 4004)
+    await new Promise((r) => setTimeout(r, 3500));
+  }
+
+  revalidatePath('/lobbies');
+  revalidatePath(returnTo);
+}
+
+export async function disconnectSteamBotAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('UNAUTHORIZED');
+
+  const returnTo = String(formData.get('returnTo') ?? '/lobbies');
+  await disconnectDotaBot();
+
+  revalidatePath('/lobbies');
+  revalidatePath(returnTo);
+}
+
+export async function spawnDotaLobbyWithBotAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('UNAUTHORIZED');
+
+  const lobbyId = z.string().min(1).parse(formData.get('lobbyId'));
+  const lobby = await getCustomLobbyById(lobbyId, user.id, user.role);
+  if (!lobby) throw new Error('LOBBY_NOT_FOUND');
+
+  const steamIds64 = lobby.participants.map((p) => p.user.steamId64);
+
+  const result = await botCreateDotaLobbyAndInvite({
+    lobbyId: lobby.id,
+    gameName: lobby.dotaLobbyName || `Dota turnir — ${lobby.name.slice(0, 28)}`,
+    passKey: lobby.dotaLobbyPassword || 'dt777',
+    gameMode: lobby.gameMode,
+    serverLocation: lobby.serverLocation,
+    region: lobby.region,
+    steamIds64,
+  });
+
+  revalidatePath(`/lobbies/${lobbyId}`);
+  if (!result.ok) {
+    redirect(
+      `/lobbies/${lobbyId}?error=${encodeURIComponent(result.reason ?? 'BOT_NOT_READY')}`,
+    );
+  }
+  redirect(`/lobbies/${lobbyId}?botInvited=1`);
+}
+
+export async function inviteMeWithBotAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('UNAUTHORIZED');
+
+  const lobbyId = z.string().min(1).parse(formData.get('lobbyId'));
+  botInvitePlayerToDotaLobby(user.steamId64);
+
+  revalidatePath(`/lobbies/${lobbyId}`);
+  redirect(`/lobbies/${lobbyId}?botInvited=1`);
 }
