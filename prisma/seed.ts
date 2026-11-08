@@ -31,12 +31,30 @@ async function main() {
   const existingTeamsCount = await prisma.team.count().catch(() => 0);
   if (existingTeamsCount > 0 && process.env.FORCE_SEED !== 'true') {
     console.log(
-      `ℹ️ Database already contains ${existingTeamsCount} teams. Skipping initial seed (set FORCE_SEED=true to re-seed).`,
+      `ℹ️ Database already contains ${existingTeamsCount} teams. Updating Dota turnir tournament covers & branding...`,
     );
+    await prisma.tournament
+      .updateMany({
+        where: { slug: 'aegis-open-qualifier-s1' },
+        data: {
+          name: 'Dota turnir Open Qualifier — Season 1',
+          coverUrl: '/covers/qualifier-cover.jpg',
+        },
+      })
+      .catch(() => null);
+    await prisma.tournament
+      .updateMany({
+        where: { slug: 'aegis-champions-cup-s1' },
+        data: {
+          name: 'Dota turnir Champions Cup — Major S1',
+          coverUrl: '/covers/major-cover.jpg',
+        },
+      })
+      .catch(() => null);
     return;
   }
 
-  console.log('🌱 Starting Dota 2 Platform seed...');
+  console.log('🌱 Starting Dota turnir Platform seed...');
 
   // 1. Active Rating Formula v1
   await prisma.ratingFormula.upsert({
@@ -133,12 +151,17 @@ async function main() {
   // 4. Create Tournament #1 in `registration` status
   const regTournament = await prisma.tournament.upsert({
     where: { slug: 'aegis-open-qualifier-s1' },
-    update: { status: 'registration' },
+    update: {
+      name: 'Dota turnir Open Qualifier — Season 1',
+      coverUrl: '/covers/qualifier-cover.jpg',
+      status: 'registration',
+    },
     create: {
       slug: 'aegis-open-qualifier-s1',
-      name: 'AEGIS Open Qualifier — Season 1',
+      name: 'Dota turnir Open Qualifier — Season 1',
+      coverUrl: '/covers/qualifier-cover.jpg',
       description:
-        'Открытая квалификация для команд Восточной и Западной Европы в формате Single Elimination BO3.',
+        'Открытая квалификация Dota turnir для команд Восточной и Западной Европы в формате Single Elimination BO3.',
       format: 'single_elimination',
       status: 'registration',
       startsAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
@@ -178,12 +201,17 @@ async function main() {
   // 5. Create Tournament #2 in `in_progress` status with 16 Teams & Partially Played Bracket
   const liveTournament = await prisma.tournament.upsert({
     where: { slug: 'aegis-champions-cup-s1' },
-    update: { status: 'in_progress' },
+    update: {
+      name: 'Dota turnir Champions Cup — Major S1',
+      coverUrl: '/covers/major-cover.jpg',
+      status: 'in_progress',
+    },
     create: {
       slug: 'aegis-champions-cup-s1',
-      name: 'AEGIS Champions Cup — Major S1',
+      name: 'Dota turnir Champions Cup — Major S1',
+      coverUrl: '/covers/major-cover.jpg',
       description:
-        'Главный турнир сезона на 16 команд с интерактивной сеткой на холсте React Flow.',
+        'Главный турнир сезона Dota turnir на 16 команд с интерактивной сеткой на холсте React Flow.',
       format: 'single_elimination',
       status: 'in_progress',
       startsAt: new Date(Date.now() - 24 * 60 * 60 * 1000),

@@ -102,9 +102,19 @@ export default async function TournamentsPage({
           {tournaments.map((tr) => (
             <Card
               key={tr.id}
-              className="flex flex-col justify-between gap-4 hover:border-white/20"
+              className="flex flex-col justify-between gap-4 hover:border-white/20 overflow-hidden"
             >
               <div className="space-y-3">
+                {tr.coverUrl && (
+                  <div className="-mx-5 -mt-5 mb-3 h-40 overflow-hidden border-b border-glass-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={tr.coverUrl}
+                      alt={tr.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between gap-2">
                   <StatusBadge status={tr.status} />
                   <span className="text-xs font-mono text-accent bg-accent-soft px-2 py-0.5 rounded-sm border border-accent/30 uppercase">

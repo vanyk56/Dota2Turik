@@ -8,16 +8,25 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'AEGIS GRID — Платформа турниров по Dota 2',
-    template: '%s | AEGIS GRID Dota 2',
+    default: 'Dota turnir — Платформа турниров по Dota 2',
+    template: '%s | Dota turnir',
   },
   description:
-    'Веб-платформа для организации турниров по Dota 2 с авторизацией через Steam OpenID 2.0, командами, интерактивным холстом сеток и статистикой OpenDota.',
+    'Dota turnir — веб-платформа для организации турниров по Dota 2 с авторизацией через Steam OpenID 2.0, командами, интерактивным холстом сеток и статистикой OpenDota.',
+  icons: {
+    icon: [
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
   openGraph: {
-    title: 'AEGIS GRID — Платформа турниров по Dota 2',
+    title: 'Dota turnir — Платформа турниров по Dota 2',
     description:
       'Интерактивные турнирные сетки, каталог команд, двухстороннее подтверждение матчей и независимый рейтинг.',
     type: 'website',
+    images: ['/logo.png'],
   },
 };
 
@@ -41,8 +50,16 @@ export default async function RootLayout({
           </main>
           <footer className="border-t border-glass-border bg-bg/90 py-6 mt-16">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted">
-              <div>
-                <strong className="text-text">AEGIS GRID</strong> — Платформа турниров по Dota 2 (MVP v1).
+              <div className="flex items-center gap-2.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/icon.png"
+                  alt="Dota turnir"
+                  className="h-6 w-6 object-contain"
+                />
+                <span>
+                  <strong className="text-text">Dota turnir</strong> — Платформа турниров по Dota 2 (MVP v1).
+                </span>
               </div>
               <div className="flex items-center gap-4">
                 <span>Steam OpenID 2.0</span>

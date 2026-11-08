@@ -51,7 +51,7 @@ export async function generateMetadata({
     title: `[${team.tag}] ${team.name} — Команда Dota 2`,
     description:
       team.description ??
-      `Профиль команды [${team.tag}] ${team.name} на турнирной платформе AEGIS GRID.`,
+      `Профиль команды [${team.tag}] ${team.name} на турнирной платформе Dota turnir.`,
     openGraph: {
       title: `[${team.tag}] ${team.name}`,
       description: `Рейтинг: ${team.ratingPoints} pts (#${team.rankPosition}) • Регион: ${team.region}`,

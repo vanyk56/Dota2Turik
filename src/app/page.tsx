@@ -44,38 +44,49 @@ export default async function HomePage({
 
       {/* Hero Section */}
       <section className="glass-elevated rounded-lg p-8 md:p-10 border border-glass-border relative overflow-hidden">
-        <div className="max-w-3xl space-y-5">
-          <span className="inline-flex items-center gap-2 rounded-sm bg-accent-soft border border-accent/30 px-3 py-1 text-xs font-semibold text-accent">
-            <Swords className="h-3.5 w-3.5" />
-            {t('badge')}
-          </span>
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-text leading-tight">
-            {t('title')}
-          </h1>
-          <p className="text-base text-text-muted leading-relaxed">
-            {t('subtitle')}
-          </p>
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Link href="/tournaments">
-              <Button variant="primary" size="lg">
-                <Swords className="h-4 w-4" />
-                {t('exploreTournaments')}
-              </Button>
-            </Link>
-            <Link href="/teams">
-              <Button variant="secondary" size="lg">
-                <Users className="h-4 w-4 text-accent" />
-                {t('browseTeams')}
-              </Button>
-            </Link>
-            {user && (
-              <Link href="/tournaments/new">
-                <Button variant="outline" size="lg">
-                  <Plus className="h-4 w-4 text-accent" />
-                  Создать турнир
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="max-w-2xl space-y-5">
+            <span className="inline-flex items-center gap-2 rounded-sm bg-accent-soft border border-accent/30 px-3 py-1 text-xs font-semibold text-accent">
+              <Swords className="h-3.5 w-3.5" />
+              Dota turnir • {t('badge')}
+            </span>
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-text leading-tight">
+              {t('title')}
+            </h1>
+            <p className="text-base text-text-muted leading-relaxed">
+              {t('subtitle')}
+            </p>
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Link href="/tournaments">
+                <Button variant="primary" size="lg">
+                  <Swords className="h-4 w-4" />
+                  {t('exploreTournaments')}
                 </Button>
               </Link>
-            )}
+              <Link href="/teams">
+                <Button variant="secondary" size="lg">
+                  <Users className="h-4 w-4 text-accent" />
+                  {t('browseTeams')}
+                </Button>
+              </Link>
+              {user && (
+                <Link href="/tournaments/new">
+                  <Button variant="outline" size="lg">
+                    <Plus className="h-4 w-4 text-accent" />
+                    Создать турнир
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+
+          <div className="hidden lg:flex items-center justify-center shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Dota turnir"
+              className="h-44 w-44 object-contain drop-shadow-[0_0_28px_rgba(139,92,246,0.4)]"
+            />
           </div>
         </div>
 
@@ -130,9 +141,19 @@ export default async function HomePage({
             {tournaments.slice(0, 6).map((tr) => (
               <Card
                 key={tr.id}
-                className="flex flex-col justify-between gap-4 hover:border-white/20"
+                className="flex flex-col justify-between gap-4 hover:border-white/20 overflow-hidden"
               >
                 <div className="space-y-2.5">
+                  {tr.coverUrl && (
+                    <div className="-mx-5 -mt-5 mb-3 h-36 overflow-hidden border-b border-glass-border">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={tr.coverUrl}
+                        alt={tr.name}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  )}
                   <div className="flex items-center justify-between gap-2">
                     <StatusBadge status={tr.status} />
                     <span className="text-xs font-mono text-text-muted uppercase">

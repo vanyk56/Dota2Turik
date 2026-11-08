@@ -38,7 +38,7 @@ export async function generateMetadata({
   }
   return {
     title: `${profile.user.nickname} — Профиль игрока Dota 2`,
-    description: `Статистика игрока ${profile.user.nickname} на платформе AEGIS GRID и в Dota 2 (OpenDota).`,
+    description: `Статистика игрока ${profile.user.nickname} на платформе Dota turnir и в Dota 2 (OpenDota).`,
   };
 }
 
@@ -140,7 +140,7 @@ export default async function PlayerProfilePage({
             <div>
               <h2 className="text-base font-bold text-text flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-accent" />
-                Статистика на платформе AEGIS GRID
+                Статистика на платформе Dota turnir
               </h2>
               <p className="text-xs text-text-muted mt-0.5">
                 Только официальные матчи и турниры платформы (не смешивается с MMR Dota 2)

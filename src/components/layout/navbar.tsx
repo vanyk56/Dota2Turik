@@ -36,10 +36,13 @@ export async function Navbar() {
             href="/"
             className="flex items-center gap-2.5 text-base font-bold tracking-tight text-text hover:text-accent transition-colors"
           >
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-white shadow-accent-glow">
-              <Swords className="h-4 w-4" />
-            </span>
-            <span>AEGIS GRID</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/icon.png"
+              alt="Dota turnir"
+              className="h-9 w-9 object-contain drop-shadow-[0_0_12px_rgba(139,92,246,0.45)]"
+            />
+            <span>Dota turnir</span>
           </Link>
 
           {/* Main Navigation */}

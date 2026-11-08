@@ -1,6 +1,6 @@
 // [Phase: MVP v1] Central Platform Configuration & Limits
 export const PLATFORM_CONFIG = {
-  appName: 'AEGIS GRID',
+  appName: 'Dota turnir',
   roster: {
     maxMainPlayers: 5,
     maxSubstitutes: 2,

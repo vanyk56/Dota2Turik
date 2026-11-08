@@ -6,7 +6,7 @@ test.describe('Dota 2 Tournament Platform — MVP E2E', () => {
     page,
   }) => {
     await page.goto('/');
-    await expect(page.locator('header')).toContainText('AEGIS GRID');
+    await expect(page.locator('header')).toContainText('Dota turnir');
     await expect(page.locator('h1')).toBeVisible();
   });
 
