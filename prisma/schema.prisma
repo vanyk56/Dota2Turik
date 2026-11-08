@@ -481,7 +481,7 @@ model CustomLobby {
   hostId            String
   status            LobbyStatus   @default(waiting)
   gameMode          LobbyGameMode @default(all_pick)
-  region            String        @default("EEU")
+  region            String        @default("EU")
   serverLocation    String        @default("Stockholm")
   maxPlayers        Int           @default(10)
   passwordHash      String?

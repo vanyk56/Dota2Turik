@@ -38,7 +38,7 @@ export const PLATFORM_CONFIG = {
     defaultPageSize: 12,
     maxPageSize: 48,
   },
-  regions: ['WEU', 'EEU', 'NA', 'SA', 'CN', 'SEA', 'MENA'] as const,
+  regions: ['EU', 'RU', 'US', 'CN', 'ASIA', 'BR', 'INT'] as const,
   countries: [
     { code: 'RU', name: 'Russia', flag: '🇷🇺' },
     { code: 'UA', name: 'Ukraine', flag: '🇺🇦' },

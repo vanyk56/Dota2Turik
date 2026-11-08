@@ -35,7 +35,7 @@ export async function createLobbyAction(formData: FormData) {
     gameMode: z
       .enum(['all_pick', 'captains_mode', 'mid_only', 'random_draft', 'turbo'])
       .parse(formData.get('gameMode') ?? 'all_pick'),
-    region: String(formData.get('region') ?? 'EEU'),
+    region: String(formData.get('region') ?? 'EU'),
     serverLocation: String(formData.get('serverLocation') ?? 'Stockholm (EU North)'),
     maxPlayers,
     accessType,

@@ -61,7 +61,7 @@ export default async function CreateTeamPage() {
               <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1.5">
                 Регион *
               </label>
-              <Select name="region" defaultValue="EEU">
+              <Select name="region" defaultValue="EU">
                 {PLATFORM_CONFIG.regions.map((r) => (
                   <option key={r} value={r}>
                     {r}
@@ -137,7 +137,7 @@ export default async function CreateTeamPage() {
               name="joinPassword"
               type="password"
               minLength={4}
-              placeholder="Хешируется на сервере через scrypt"
+              placeholder="Введите пароль для вступления без заявки..."
             />
           </div>
 

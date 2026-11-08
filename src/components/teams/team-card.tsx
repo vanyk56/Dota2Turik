@@ -17,6 +17,8 @@ interface TeamCardProps {
 export function TeamCard({ team, isSelected, selectHref }: TeamCardProps) {
   const flag = getCountryFlag(team.country);
   const maxMain = PLATFORM_CONFIG.roster.maxMainPlayers;
+  const validLogoUrl =
+    team.logoUrl && !team.logoUrl.startsWith('/uploads/') ? team.logoUrl : null;
 
   return (
     <Card
@@ -26,10 +28,10 @@ export function TeamCard({ team, isSelected, selectHref }: TeamCardProps) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="h-12 w-12 rounded-md bg-bg-elevated border border-glass-border flex items-center justify-center text-sm font-bold text-accent shrink-0 overflow-hidden">
-            {team.logoUrl ? (
+            {validLogoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={team.logoUrl}
+                src={validLogoUrl}
                 alt={team.name}
                 className="h-full w-full object-cover"
               />

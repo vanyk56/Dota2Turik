@@ -77,8 +77,13 @@ export function TeamDetailPanel({
   const [activeTab, setActiveTab] = React.useState<
     'about' | 'roster' | 'history' | 'stats'
   >('roster');
+  const [logoError, setLogoError] = React.useState(false);
 
   const flag = getCountryFlag(team.country);
+  const validLogoUrl =
+    team.logoUrl && !team.logoUrl.startsWith('/uploads/') && !logoError
+      ? team.logoUrl
+      : null;
 
   return (
     <div className="glass-elevated rounded-lg p-5 space-y-5 border border-glass-border">
@@ -86,11 +91,12 @@ export function TeamDetailPanel({
       <div className="flex items-start justify-between gap-4 border-b border-glass-border pb-4">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="h-14 w-14 rounded-lg bg-bg border border-glass-border flex items-center justify-center text-base font-bold text-accent shrink-0 overflow-hidden">
-            {team.logoUrl ? (
+            {validLogoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={team.logoUrl}
+                src={validLogoUrl}
                 alt={team.name}
+                onError={() => setLogoError(true)}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -141,7 +147,7 @@ export function TeamDetailPanel({
           }`}
         >
           <Info className="h-3.5 w-3.5" />
-          About
+          О команде
         </button>
         <button
           type="button"
@@ -153,7 +159,7 @@ export function TeamDetailPanel({
           }`}
         >
           <Users className="h-3.5 w-3.5" />
-          Roster ({team.memberships.length})
+          Состав ({team.memberships.length})
         </button>
         <button
           type="button"
@@ -165,7 +171,7 @@ export function TeamDetailPanel({
           }`}
         >
           <History className="h-3.5 w-3.5" />
-          History
+          История
         </button>
         <button
           type="button"
@@ -177,7 +183,7 @@ export function TeamDetailPanel({
           }`}
         >
           <BarChart3 className="h-3.5 w-3.5" />
-          Stats
+          Статистика
         </button>
       </div>
 

@@ -43,71 +43,67 @@ export default async function HomePage({
     (tr) => tr.status === 'registration' || tr.status === 'in_progress',
   ).length;
 
-  const totalMatchesCount = tournaments.reduce(
-    (acc, tr) => acc + tr._count.matches,
-    0,
-  );
+  const activeLobbiesCount = lobbies.filter(
+    (lb) => lb.status === 'waiting' || lb.status === 'in_progress',
+  ).length;
 
   return (
     <div className="space-y-12">
       {/* Auth Error Alert */}
       {searchParams?.authError && (
         <div className="rounded-md bg-danger/15 border border-danger/30 px-4 py-3 text-sm text-danger">
-          Ошибка входа через Steam OpenID: <code>{searchParams.authError}</code>
+          Ошибка входа через Steam: <code>{searchParams.authError}</code>
         </div>
       )}
 
       {/* Hero Section */}
       <section className="glass-elevated rounded-lg p-8 md:p-10 border border-glass-border relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-          <div className="max-w-2xl space-y-5">
-            <span className="inline-flex items-center gap-2 rounded-sm bg-accent-soft border border-accent/30 px-3 py-1 text-xs font-semibold text-accent">
-              <Swords className="h-3.5 w-3.5" />
-              Dota turnir • {t('badge')}
-            </span>
-            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-text leading-tight">
-              {t('title')}
-            </h1>
-            <p className="text-base text-text-muted leading-relaxed">
-              {t('subtitle')}
-            </p>
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link href="/tournaments">
-                <Button variant="primary" size="lg">
-                  <Swords className="h-4 w-4" />
-                  {t('exploreTournaments')}
-                </Button>
-              </Link>
-              <Link href="/lobbies">
-                <Button variant="secondary" size="lg">
-                  <Gamepad2 className="h-4 w-4 text-accent" />
-                  Лобби (Лобаки 5x5)
-                </Button>
-              </Link>
-              <Link href="/teams">
-                <Button variant="secondary" size="lg">
-                  <Users className="h-4 w-4 text-accent" />
-                  {t('browseTeams')}
-                </Button>
-              </Link>
-              {user && (
+        <div className="max-w-3xl space-y-5">
+          <span className="inline-flex items-center gap-2 rounded-sm bg-accent-soft border border-accent/30 px-3 py-1 text-xs font-semibold text-accent">
+            <Swords className="h-3.5 w-3.5" />
+            Dota turnir • {t('badge')}
+          </span>
+          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-text leading-tight">
+            {t('title')}
+          </h1>
+          <p className="text-base text-text-muted leading-relaxed">
+            {t('subtitle')}
+          </p>
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Link href="/tournaments">
+              <Button variant="primary" size="lg">
+                <Swords className="h-4 w-4" />
+                {t('exploreTournaments')}
+              </Button>
+            </Link>
+            <Link href="/lobbies">
+              <Button variant="secondary" size="lg">
+                <Gamepad2 className="h-4 w-4 text-accent" />
+                Лобби (Лобаки 5x5)
+              </Button>
+            </Link>
+            <Link href="/teams">
+              <Button variant="secondary" size="lg">
+                <Users className="h-4 w-4 text-accent" />
+                {t('browseTeams')}
+              </Button>
+            </Link>
+            {user && (
+              <>
                 <Link href="/lobbies/new">
                   <Button variant="outline" size="lg">
                     <Plus className="h-4 w-4 text-accent" />
                     Создать лобби
                   </Button>
                 </Link>
-              )}
-            </div>
-          </div>
-
-          <div className="hidden lg:flex items-center justify-center shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.png"
-              alt="Dota turnir"
-              className="h-44 w-44 object-contain drop-shadow-[0_0_28px_rgba(139,92,246,0.4)]"
-            />
+                <Link href="/tournaments/new">
+                  <Button variant="outline" size="lg">
+                    <Plus className="h-4 w-4 text-accent" />
+                    Создать турнир
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
@@ -128,7 +124,7 @@ export default async function HomePage({
           <div className="bg-bg/80 rounded-md p-4 border border-glass-border">
             <div className="text-xs text-text-muted">{t('statsCompletedMatches')}</div>
             <div className="text-2xl font-bold text-accent mt-1">
-              {totalMatchesCount}
+              {activeLobbiesCount}
             </div>
           </div>
         </div>
@@ -248,7 +244,7 @@ export default async function HomePage({
         {tournaments.length === 0 ? (
           <EmptyState
             title="Активных турниров пока нет"
-            description="Создайте первый турнир на платформе или запустите prisma db seed для генерации демонстрационных турниров и 16 команд."
+            description="Создайте первый турнир на платформе, чтобы открыть регистрацию для команд."
             actionLabel={user ? 'Создать турнир' : 'Войти через Steam'}
             actionHref={user ? '/tournaments/new' : '/api/auth/steam/login'}
           />

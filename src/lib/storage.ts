@@ -1,7 +1,5 @@
-// [Phase: MVP v1] File Upload Validation & S3/Local Storage Adapter (Section 2 & 14)
+// [Phase: MVP v1] File Upload Validation & S3 / Database Data-URI Storage Adapter (Section 2 & 14)
 import crypto from 'node:crypto';
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { PLATFORM_CONFIG } from './config';
 
 export interface StoredFileResult {
@@ -65,8 +63,11 @@ export async function validateAndStoreImage(
   const generatedName = `${folder}_${crypto.randomBytes(16).toString('hex')}.${ext}`;
 
   // S3-compatible endpoint check for production
-  if (process.env.S3_ENDPOINT && process.env.S3_BUCKET && process.env.S3_PUBLIC_URL) {
-    // [Phase: MVP v1] S3 PUT via presigned/compatible HTTP endpoint when configured
+  if (
+    process.env.S3_ENDPOINT &&
+    process.env.S3_BUCKET &&
+    process.env.S3_PUBLIC_URL
+  ) {
     const publicBase = process.env.S3_PUBLIC_URL.replace(/\/$/, '');
     return {
       url: `${publicBase}/${folder}/${generatedName}`,
@@ -76,14 +77,13 @@ export async function validateAndStoreImage(
     };
   }
 
-  // Local development disk storage inside public/uploads
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads', folder);
-  await fs.mkdir(uploadsDir, { recursive: true });
-  const targetPath = path.join(uploadsDir, generatedName);
-  await fs.writeFile(targetPath, buffer);
+  // Persist directly as a Data URI in PostgreSQL so images work reliably on Railway/Docker
+  // without requiring an external S3 bucket or ephemeral container disk files.
+  const base64Data = buffer.toString('base64');
+  const dataUri = `data:${file.type};base64,${base64Data}`;
 
   return {
-    url: `/uploads/${folder}/${generatedName}`,
+    url: dataUri,
     fileName: generatedName,
     mimeType: file.type,
     sizeBytes: file.size,

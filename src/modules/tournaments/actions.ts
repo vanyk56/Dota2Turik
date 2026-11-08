@@ -33,7 +33,7 @@ export async function createTournamentAction(formData: FormData) {
       slug: String(formData.get('slug') ?? ''),
       description: String(formData.get('description') ?? ''),
       format: String(formData.get('format') ?? 'single_elimination'),
-      region: String(formData.get('region') ?? 'EEU'),
+      region: String(formData.get('region') ?? 'EU'),
       prizePool: String(formData.get('prizePool') ?? ''),
       rules: String(formData.get('rules') ?? ''),
       maxTeams: Number(formData.get('maxTeams') ?? 16),

@@ -32,7 +32,7 @@ export const createTournamentSchema = z.object({
   slug: z.string().trim().min(3).max(80).optional(),
   description: z.string().trim().min(10).max(5000),
   format: z.enum(['single_elimination', 'round_robin']).default('single_elimination'),
-  region: z.enum(PLATFORM_CONFIG.regions).default('EEU'),
+  region: z.enum(PLATFORM_CONFIG.regions).default('EU'),
   prizePool: z.string().trim().max(120).optional().or(z.literal('')),
   rules: z.string().trim().max(10000).optional().or(z.literal('')),
   maxTeams: z.coerce.number().int().min(2).max(128).default(16),

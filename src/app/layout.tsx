@@ -58,15 +58,11 @@ export default async function RootLayout({
                   className="h-6 w-6 object-contain"
                 />
                 <span>
-                  <strong className="text-text">Dota turnir</strong> — Платформа турниров по Dota 2 (MVP v1).
+                  <strong className="text-text">Dota turnir</strong> — Турниры и кастомные лобби по Dota 2.
                 </span>
               </div>
-              <div className="flex items-center gap-4">
-                <span>Steam OpenID 2.0</span>
-                <span>•</span>
-                <span>OpenDota API</span>
-                <span>•</span>
-                <span>React Flow Canvas</span>
+              <div className="text-text-muted">
+                © {new Date().getFullYear()} Dota turnir
               </div>
             </div>
           </footer>

@@ -13,16 +13,16 @@
     "createTournament": "Create Tournament"
   },
   "home": {
-    "badge": "Dota 2 Tournament Platform • MVP v1",
-    "title": "Next-Generation Tournament Infrastructure for Dota 2",
-    "subtitle": "Steam OpenID 2.0 authentication, interactive tournament brackets on an infinite dot canvas, dual-team result verification, and an independent platform rating system.",
+    "badge": "Tournaments & 5v5 Lobbies",
+    "title": "Build your team, host a custom lobby, or compete in Dota 2 tournaments",
+    "subtitle": "Join competitive brackets, create open 5v5 and 1v1 lobbies or private password-protected rooms for friends, and climb the team leaderboard.",
     "exploreTournaments": "Browse Tournaments",
     "browseTeams": "Team Catalog",
     "statsActiveTournaments": "Active Tournaments",
     "statsRegisteredTeams": "Registered Teams",
-    "statsCompletedMatches": "Completed Matches",
+    "statsCompletedMatches": "Active Lobbies",
     "featuredTournaments": "Featured Tournaments",
-    "topTeams": "Top Rated Platform Teams"
+    "topTeams": "Top Teams"
   },
   "status": {
     "active": "Active",

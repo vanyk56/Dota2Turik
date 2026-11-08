@@ -47,7 +47,7 @@ export async function createTeamAction(formData: FormData) {
       tag: String(formData.get('tag') ?? ''),
       description: String(formData.get('description') ?? ''),
       country: String(formData.get('country') ?? 'RU'),
-      region: String(formData.get('region') ?? 'EEU'),
+      region: String(formData.get('region') ?? 'EU'),
       discordUrl: String(formData.get('discordUrl') ?? ''),
       telegramUrl: String(formData.get('telegramUrl') ?? ''),
       joinPassword: String(formData.get('joinPassword') ?? ''),

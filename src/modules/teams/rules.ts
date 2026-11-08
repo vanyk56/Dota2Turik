@@ -23,7 +23,7 @@ export const createTeamSchema = z.object({
     .transform((v) => v.toUpperCase()),
   description: z.string().trim().max(1000).optional().or(z.literal('')),
   country: z.string().trim().min(2).max(3).default('RU'),
-  region: z.enum(PLATFORM_CONFIG.regions).default('EEU'),
+  region: z.enum(PLATFORM_CONFIG.regions).default('EU'),
   discordUrl: z.string().url().optional().or(z.literal('')),
   telegramUrl: z.string().url().optional().or(z.literal('')),
   joinPassword: z.string().min(4).max(64).optional().or(z.literal('')),

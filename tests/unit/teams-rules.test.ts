@@ -14,7 +14,7 @@ describe('Team Roster Limits & Role Rules (Section 7)', () => {
       name: 'Team Spirit',
       tag: 'ts',
       country: 'RU',
-      region: 'EEU',
+      region: 'EU',
     });
     expect(valid.success).toBe(true);
     if (valid.success) {
@@ -25,7 +25,7 @@ describe('Team Roster Limits & Role Rules (Section 7)', () => {
       name: 'Team Spirit',
       tag: 'T',
       country: 'RU',
-      region: 'EEU',
+      region: 'EU',
     });
     expect(invalidShortTag.success).toBe(false);
 
@@ -33,7 +33,7 @@ describe('Team Roster Limits & Role Rules (Section 7)', () => {
       name: 'Team Spirit',
       tag: 'SPIRIT6',
       country: 'RU',
-      region: 'EEU',
+      region: 'EU',
     });
     expect(invalidLongTag.success).toBe(false);
   });
