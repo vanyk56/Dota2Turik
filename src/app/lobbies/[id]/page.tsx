@@ -265,28 +265,41 @@ export default async function LobbyDetailPage({
 
         {/* Dota 2 Client Connection Credentials */}
         <div className="rounded-md border border-glass-border bg-bg-elevated p-4 space-y-3">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="text-xs font-semibold uppercase tracking-wider text-text flex items-center gap-2">
               <Gamepad2 className="h-4 w-4 text-accent" />
-              Данные для подключения внутри клиента Dota 2
+              Как зайти в эту игру в клиенте Dota 2
             </div>
             {lobby.canViewCredentials && (
-              <span className="text-[11px] text-success font-medium">
-                Нажмите «Копировать», чтобы вставить в поиске частных лобби Dota 2
+              <span className="text-[11px] text-accent font-medium">
+                В Dota 2 ищите комнату по паролю во вкладке «Частные лобби»
               </span>
             )}
           </div>
 
           {lobby.canViewCredentials ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <CopyableField
-                label="Название лобби в Dota 2"
-                value={lobby.dotaLobbyName || lobby.name}
-              />
-              <CopyableField
-                label="Пароль в клиенте Dota 2"
-                value={lobby.dotaLobbyPassword || 'Без пароля'}
-              />
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <CopyableField
+                  label="Название лобби в Dota 2"
+                  value={lobby.dotaLobbyName || lobby.name}
+                />
+                <CopyableField
+                  label="Пароль лобби (для входа в Dota 2)"
+                  value={lobby.dotaLobbyPassword || 'Без пароля'}
+                />
+              </div>
+
+              <div className="rounded-sm bg-bg/70 border border-glass-border px-3 py-2.5 text-xs text-text-muted space-y-1">
+                <div>
+                  <strong className="text-text">1. Хосту ({lobby.host.nickname}):</strong>{' '}
+                  В клиенте Dota 2 нажмите синюю кнопку <strong className="text-text">«СОЗДАТЬ ЛОББИ»</strong> (справа внизу) → нажмите «Изменить» → укажите название и пароль выше.
+                </div>
+                <div>
+                  <strong className="text-text">2. Остальным игрокам:</strong>{' '}
+                  В клиенте Dota 2 нажмите «Играть» → <strong className="text-text">«ЧАСТНЫЕ ЛОББИ»</strong> → вставьте скопированный <strong className="text-accent">Пароль лобби</strong> (или примите инвайт в Steam от хоста).
+                </div>
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-2.5 text-xs text-text-muted py-1">
