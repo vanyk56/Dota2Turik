@@ -159,6 +159,16 @@ function steamId64ToFixed64Buffer(steamId64: string): Buffer | null {
   return buf;
 }
 
+export interface QueuedLobbyRequest {
+  lobbyId: string;
+  gameName: string;
+  passKey: string;
+  gameMode: string;
+  serverLocation: string;
+  region: string;
+  steamIds64: string[];
+}
+
 export interface DotaBotRuntimeState {
   client: SteamUser | null;
   status:
@@ -174,6 +184,9 @@ export interface DotaBotRuntimeState {
   activeLobbyId: string | null;
   watchedPlayerBuffers: Buffer[];
   autoHandoffTriggered: boolean;
+  handoffTimer: ReturnType<typeof setTimeout> | null;
+  lobbyQueue: QueuedLobbyRequest[];
+  isProcessingQueue: boolean;
   steamGuardCallback: ((code: string) => void) | null;
   gcHelloInterval: ReturnType<typeof setInterval> | null;
   autoInitAttempted: boolean;
@@ -194,6 +207,9 @@ function getRuntime(): DotaBotRuntimeState {
       activeLobbyId: null,
       watchedPlayerBuffers: [],
       autoHandoffTriggered: false,
+      handoffTimer: null,
+      lobbyQueue: [],
+      isProcessingQueue: false,
       steamGuardCallback: null,
       gcHelloInterval: null,
       autoInitAttempted: false,
@@ -477,6 +493,10 @@ export async function disconnectDotaBot() {
  */
 export function botLeaveLobbyAndRelease(): boolean {
   const rt = getRuntime();
+  if (rt.handoffTimer) {
+    clearTimeout(rt.handoffTimer);
+    rt.handoffTimer = null;
+  }
   if (!rt.client || rt.status !== 'ready_gc') {
     return false;
   }
@@ -492,26 +512,23 @@ export function botLeaveLobbyAndRelease(): boolean {
     rt.watchedPlayerBuffers = [];
     rt.autoHandoffTriggered = false;
     void persistBotState({ activeLobbyId: null });
+
+    // If another lobby is waiting in the FIFO queue, spawn it next!
+    if (rt.lobbyQueue.length > 0) {
+      const nextReq = rt.lobbyQueue.shift()!;
+      setTimeout(() => {
+        void executeLobbyCreationNow(nextReq);
+      }, 1200);
+    }
     return true;
   } catch {
     return false;
   }
 }
 
-/**
- * Creates a real practice lobby inside Dota 2 Game Coordinator, immediately moves the bot
- * out of Radiant Slot 1 into Unassigned («НЕОПРЕДЕЛИВШИЕСЯ»), invites all participants,
- * and watches for the host/players to join so it can hand over leadership and free itself!
- */
-export async function botCreateDotaLobbyAndInvite(opts: {
-  lobbyId: string;
-  gameName: string;
-  passKey: string;
-  gameMode: string;
-  serverLocation: string;
-  region: string;
-  steamIds64: string[];
-}): Promise<{ ok: boolean; reason?: string }> {
+async function executeLobbyCreationNow(
+  opts: QueuedLobbyRequest,
+): Promise<{ ok: boolean; reason?: string }> {
   const rt = getRuntime();
   if (!rt.client || rt.status !== 'ready_gc') {
     return {
@@ -521,6 +538,11 @@ export async function botCreateDotaLobbyAndInvite(opts: {
   }
 
   try {
+    if (rt.handoffTimer) {
+      clearTimeout(rt.handoffTimer);
+      rt.handoffTimer = null;
+    }
+
     // 1. Leave any previous practice lobby first
     rt.client.sendToGC(
       DOTA2_APP_ID,
@@ -587,6 +609,14 @@ export async function botCreateDotaLobbyAndInvite(opts: {
       }
     }
 
+    // 6. Safety timeout: if another lobby enters the queue and no one joined within 30s,
+    //    release the bot so the queue never stalls.
+    rt.handoffTimer = setTimeout(() => {
+      if (rt.activeLobbyId === opts.lobbyId && rt.lobbyQueue.length > 0) {
+        botLeaveLobbyAndRelease();
+      }
+    }, 30000);
+
     return { ok: true };
   } catch (err) {
     return {
@@ -594,6 +624,38 @@ export async function botCreateDotaLobbyAndInvite(opts: {
       reason: err instanceof Error ? err.message : 'GC_SEND_ERROR',
     };
   }
+}
+
+/**
+ * Creates a real practice lobby inside Dota 2 Game Coordinator.
+ * If the bot is currently waiting for a host to accept an invite in another lobby,
+ * queues this lobby creation and spawns it automatically as soon as the bot hands over leadership!
+ */
+export async function botCreateDotaLobbyAndInvite(
+  opts: QueuedLobbyRequest,
+): Promise<{ ok: boolean; reason?: string }> {
+  const rt = getRuntime();
+  if (!rt.client || rt.status !== 'ready_gc') {
+    return {
+      ok: false,
+      reason: 'BOT_NOT_READY_IN_GC',
+    };
+  }
+
+  // If bot is currently busy with a different lobby that hasn't handed off yet, enqueue it
+  if (rt.activeLobbyId && rt.activeLobbyId !== opts.lobbyId) {
+    const existingIdx = rt.lobbyQueue.findIndex(
+      (q) => q.lobbyId === opts.lobbyId,
+    );
+    if (existingIdx >= 0) {
+      rt.lobbyQueue[existingIdx] = opts;
+    } else {
+      rt.lobbyQueue.push(opts);
+    }
+    return { ok: true };
+  }
+
+  return executeLobbyCreationNow(opts);
 }
 
 export function botInvitePlayerToDotaLobby(steamId64: string): boolean {
