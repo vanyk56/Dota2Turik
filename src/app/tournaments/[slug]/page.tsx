@@ -57,8 +57,10 @@ export async function generateMetadata({
 
 export default async function TournamentDetailPage({
   params,
+  searchParams,
 }: {
   params: { slug: string };
+  searchParams?: { reg_error?: string; reg_success?: string };
 }) {
   const user = await getCurrentUser();
   const [tournament, viewerCtx] = await Promise.all([
@@ -88,6 +90,26 @@ export default async function TournamentDetailPage({
 
   return (
     <div className="space-y-8">
+      {searchParams?.reg_error && (
+        <div className="p-4 rounded-xl border border-red-500/40 bg-red-950/30 text-red-200 text-sm flex items-start gap-3 backdrop-blur-sm shadow-lg">
+          <span className="text-lg">⚠️</span>
+          <div className="space-y-1">
+            <p className="font-semibold text-red-100">Ошибка регистрации на турнир</p>
+            <p className="text-red-300/90 text-xs leading-relaxed">{searchParams.reg_error}</p>
+          </div>
+        </div>
+      )}
+
+      {searchParams?.reg_success && (
+        <div className="p-4 rounded-xl border border-emerald-500/40 bg-emerald-950/30 text-emerald-200 text-sm flex items-start gap-3 backdrop-blur-sm shadow-lg">
+          <span className="text-lg">✅</span>
+          <div className="space-y-1">
+            <p className="font-semibold text-emerald-100">Заявка принята</p>
+            <p className="text-emerald-300/90 text-xs leading-relaxed">{searchParams.reg_success}</p>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         title={tournament.name}
         subtitle={tournament.description}

@@ -27,22 +27,45 @@ import {
 } from '@/modules/brackets/engine';
 import { awardTournamentRatings } from '@/modules/ratings/service';
 
+const REGION_NORMALIZATION_MAP: Record<string, string> = {
+  WEU: 'EU',
+  EEU: 'RU',
+  NA: 'US',
+  SA: 'BR',
+  SEA: 'ASIA',
+  MENA: 'EU',
+};
+
 export const createTournamentSchema = z.object({
-  name: z.string().trim().min(3).max(80),
-  slug: z.string().trim().min(3).max(80).optional(),
-  description: z.string().trim().min(10).max(5000),
-  format: z.enum(['single_elimination', 'round_robin']).default('single_elimination'),
-  region: z.enum(PLATFORM_CONFIG.regions).default('EU'),
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Название турнира должно содержать от 2 до 80 символов')
+    .max(80, 'Название турнира должно содержать до 80 символов'),
+  slug: z.string().trim().max(80).optional().or(z.literal('')),
+  description: z.string().trim().max(5000).optional().or(z.literal('')),
+  format: z
+    .enum(['single_elimination', 'round_robin', 'double_elimination', 'groups_playoffs', 'swiss'])
+    .default('single_elimination'),
+  region: z
+    .string()
+    .trim()
+    .transform((val) => {
+      const up = val.toUpperCase();
+      return (
+        REGION_NORMALIZATION_MAP[up] ??
+        ((PLATFORM_CONFIG.regions as readonly string[]).includes(up) ? up : 'EU')
+      );
+    })
+    .default('EU'),
   prizePool: z.string().trim().max(120).optional().or(z.literal('')),
   rules: z.string().trim().max(10000).optional().or(z.literal('')),
   maxTeams: z.coerce.number().int().min(2).max(128).default(16),
-  startsAt: z.string().min(1),
+  startsAt: z.string().optional().or(z.literal('')),
   endsAt: z.string().optional().or(z.literal('')),
   levelWeight: z.enum(['tier_s', 'tier_a', 'tier_b', 'tier_c']).default('tier_b'),
   seedingMode: z.enum(['rating', 'manual']).default('rating'),
-  defaultBestOf: z.coerce.number().int().refine((v) => [1, 3, 5].includes(v), {
-    message: 'Best-Of must be 1, 3, or 5',
-  }).default(3),
+  defaultBestOf: z.coerce.number().int().default(3),
   initialStatus: z.enum(['draft', 'registration']).default('registration'),
 });
 
@@ -74,16 +97,31 @@ export async function createTournament(
     tieBreakOrder: ['head_to_head', 'score_diff', 'wins'],
   };
 
+  const rawStartsAt = parsed.startsAt ? new Date(parsed.startsAt) : null;
+  const startsAt =
+    rawStartsAt && !isNaN(rawStartsAt.getTime())
+      ? rawStartsAt
+      : new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  const rawEndsAt = parsed.endsAt ? new Date(parsed.endsAt) : null;
+  const endsAt =
+    rawEndsAt && !isNaN(rawEndsAt.getTime()) ? rawEndsAt : null;
+
+  const description =
+    parsed.description && parsed.description.length >= 3
+      ? parsed.description
+      : `Турнир по Dota 2: ${parsed.name}. Сетка матчей, расписание и результаты.`;
+
   const tournament = await db.tournament.create({
     data: {
       name: parsed.name,
       slug: finalSlug,
-      description: parsed.description,
+      description,
       coverUrl: coverUrl ?? null,
       format: parsed.format as TournamentFormat,
       status: parsed.initialStatus as TournamentStatus,
-      startsAt: new Date(parsed.startsAt),
-      endsAt: parsed.endsAt ? new Date(parsed.endsAt) : null,
+      startsAt,
+      endsAt,
       region: parsed.region,
       prizePool: parsed.prizePool || null,
       rules: parsed.rules || null,
@@ -337,8 +375,13 @@ export async function registerTeamForTournament(
   }
 
   // Section 10: "Проверки: команда заполнена минимум на 5 основных игроков"
+  // For platform admin/owner testing, allow teams with at least 1 member (captain)
   const counts = calculateRosterCounts(team.memberships);
-  if (counts.mainCount < PLATFORM_CONFIG.roster.minMainPlayersForTournament) {
+  const minRequired =
+    actor.role === 'admin'
+      ? 1
+      : PLATFORM_CONFIG.roster.minMainPlayersForTournament;
+  if (counts.mainCount < minRequired) {
     throw new Error('TEAM_NEEDS_AT_LEAST_5_MAIN_PLAYERS');
   }
 

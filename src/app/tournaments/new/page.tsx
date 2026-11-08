@@ -8,7 +8,11 @@ import { Card } from '@/components/ui/card';
 import { Input, Select, Textarea } from '@/components/ui/input';
 import { ForbiddenState, PageHeader } from '@/components/ui/states';
 
-export default async function CreateTournamentPage() {
+export default async function CreateTournamentPage({
+  searchParams,
+}: {
+  searchParams?: { error?: string };
+}) {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -28,6 +32,16 @@ export default async function CreateTournamentPage() {
         subtitle="Настройте формат сетки (Single Elimination или Round Robin), посев, серию матчей и уровень турнира для расчёта рейтинга."
       />
 
+      {searchParams?.error && (
+        <div className="p-4 rounded-xl border border-red-500/40 bg-red-950/30 text-red-200 text-sm flex items-start gap-3 backdrop-blur-sm shadow-lg">
+          <span className="text-lg">⚠️</span>
+          <div className="space-y-1">
+            <p className="font-semibold text-red-100">Ошибка при создании турнира</p>
+            <p className="text-red-300/90 text-xs leading-relaxed">{searchParams.error}</p>
+          </div>
+        </div>
+      )}
+
       <Card>
         <form action={createTournamentAction} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -37,8 +51,8 @@ export default async function CreateTournamentPage() {
               </label>
               <Input
                 name="name"
-                placeholder="Например: AEGIS Winter Cup #1"
-                minLength={3}
+                placeholder="Например: Winter Cup 2026"
+                minLength={2}
                 maxLength={80}
                 required
               />
@@ -50,7 +64,7 @@ export default async function CreateTournamentPage() {
               </label>
               <Input
                 name="slug"
-                placeholder="aegis-winter-cup-1"
+                placeholder="winter-cup-2026"
                 className="font-mono"
               />
             </div>
@@ -174,13 +188,11 @@ export default async function CreateTournamentPage() {
 
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-1.5">
-              Описание турнира (Markdown) *
+              Описание турнира (необязательно)
             </label>
             <Textarea
               name="description"
-              placeholder="Подробная информация о турнире, расписании и трансляциях..."
-              minLength={10}
-              required
+              placeholder="Информация о турнире, расписании, формате и призах..."
             />
           </div>
 
