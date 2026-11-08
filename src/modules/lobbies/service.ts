@@ -42,9 +42,9 @@ export const CreateLobbyInputSchema = z.object({
 export type CreateLobbyInput = z.infer<typeof CreateLobbyInputSchema>;
 
 export const LOBBY_GAME_MODE_LABELS: Record<LobbyGameMode, string> = {
-  all_pick: 'All Pick 5x5',
-  captains_mode: 'Captains Mode 5x5',
-  mid_only: '1x1 / Mid Only',
+  all_pick: 'All Pick',
+  captains_mode: 'Captains Mode',
+  mid_only: '1x1 Mid',
   random_draft: 'Random Draft',
   turbo: 'Turbo',
 };
@@ -60,11 +60,11 @@ export const LOBBY_SERVER_LOCATIONS = [
 ] as const;
 
 export const DOTA_POSITION_LABELS: Record<number, string> = {
-  1: 'Pos 1 • Carry (Керри)',
-  2: 'Pos 2 • Midlane (Мидер)',
-  3: 'Pos 3 • Offlane (Оффлейнер)',
-  4: 'Pos 4 • Soft Support (Четвёрка)',
-  5: 'Pos 5 • Hard Support (Пятёрка)',
+  1: 'Pos 1 · Carry',
+  2: 'Pos 2 · Mid',
+  3: 'Pos 3 · Offlane',
+  4: 'Pos 4 · Support',
+  5: 'Pos 5 · Hard Support',
 };
 
 export function canManageLobby(

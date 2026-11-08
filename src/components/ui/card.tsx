@@ -1,20 +1,32 @@
-// [Phase: MVP v1] Glassmorphism Card Component (Section 12)
+// Surface card. With `href`, the whole card is a link; inner controls need `relative z-10`.
 import * as React from 'react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   active?: boolean;
+  href?: string;
 }
 
-export function Card({ className, active, ...props }: CardProps) {
+export function Card({ className, active, href, children, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        'glass-panel rounded-lg p-5 transition-all duration-150 ease-out',
-        active && 'border-accent shadow-accent-glow bg-accent-soft',
+        'glass-panel relative rounded-lg p-5 transition-colors duration-150',
+        href && 'card-link',
+        active && 'border-accent bg-accent-soft',
         className,
       )}
       {...props}
-    />
+    >
+      {href && (
+        <Link
+          href={href}
+          aria-label="Открыть"
+          className="absolute inset-0 z-0 rounded-lg"
+        />
+      )}
+      {children}
+    </div>
   );
 }

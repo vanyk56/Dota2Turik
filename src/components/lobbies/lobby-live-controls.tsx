@@ -1,6 +1,6 @@
 'use client';
 
-// [Phase: MVP v1] Client Helpers for Custom Lobby Room (Live Auto-Refresh, Copy Credentials, Access Mode Selector)
+// Client helpers for the lobby room
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Copy, Check, RefreshCw, Lock, Unlock } from 'lucide-react';
@@ -17,7 +17,7 @@ export function LobbyAutoRefresh({ active }: { active: boolean }) {
       if (document.visibilityState === 'visible') {
         router.refresh();
       }
-    }, 5000);
+    }, 8000);
     return () => clearInterval(interval);
   }, [active, router]);
 
@@ -30,13 +30,15 @@ export function LobbyAutoRefresh({ active }: { active: boolean }) {
   return (
     <Button
       type="button"
-      variant="secondary"
+      variant="ghost"
       size="sm"
       onClick={handleManualRefresh}
-      title="Обновить состояние слотов"
+      title="Обновить"
     >
-      <RefreshCw className={`h-3.5 w-3.5 text-accent ${isRefreshing ? 'animate-spin' : ''}`} />
-      <span>Обновить</span>
+      <RefreshCw
+        className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`}
+      />
+      Обновить
     </Button>
   );
 }
@@ -54,18 +56,16 @@ export function CopyableField({
     try {
       await navigator.clipboard.writeText(value);
       setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
+      setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Fallback ignored
+      // clipboard unavailable
     }
   };
 
   return (
-    <div className="flex items-center justify-between gap-2 rounded-md border border-glass-border bg-bg/90 px-3 py-2">
+    <div className="flex items-center justify-between gap-2 rounded-md border border-glass-border bg-bg-elevated px-3 py-2">
       <div className="min-w-0">
-        <div className="text-[11px] uppercase tracking-wider text-text-muted">
-          {label}
-        </div>
+        <div className="text-[11px] text-text-muted">{label}</div>
         <div className="font-mono text-sm font-semibold text-text truncate">
           {value}
         </div>
@@ -76,17 +76,12 @@ export function CopyableField({
         size="sm"
         onClick={handleCopy}
         className="shrink-0"
+        title="Копировать"
       >
         {copied ? (
-          <>
-            <Check className="h-3.5 w-3.5 text-success" />
-            <span className="text-xs text-success">Скопировано</span>
-          </>
+          <Check className="h-3.5 w-3.5 text-success" />
         ) : (
-          <>
-            <Copy className="h-3.5 w-3.5 text-accent" />
-            <span className="text-xs">Копировать</span>
-          </>
+          <Copy className="h-3.5 w-3.5" />
         )}
       </Button>
     </div>
@@ -96,82 +91,46 @@ export function CopyableField({
 export function LobbyAccessSelector() {
   const [mode, setMode] = React.useState<'open' | 'password'>('open');
 
+  const options = [
+    { id: 'open' as const, title: 'Свободный вход', icon: Unlock },
+    { id: 'password' as const, title: 'По паролю', icon: Lock },
+  ];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <input type="hidden" name="accessType" value={mode} />
 
-      <div>
-        <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-          Тип входа в лобби *
-        </label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        {options.map(({ id, title, icon: Icon }) => (
           <button
+            key={id}
             type="button"
-            onClick={() => setMode('open')}
-            className={`flex items-start gap-3 rounded-md border p-4 text-left transition-all ${
-              mode === 'open'
-                ? 'border-success bg-success/10 shadow-[0_0_20px_rgba(34,197,94,0.15)]'
-                : 'border-glass-border bg-bg-elevated hover:border-white/20'
+            onClick={() => setMode(id)}
+            className={`flex items-center gap-3 rounded-md border px-4 py-3 text-left text-sm font-medium transition-colors ${
+              mode === id
+                ? 'border-accent bg-accent-soft text-text'
+                : 'border-glass-border bg-bg-elevated text-text-muted hover:border-accent/40'
             }`}
           >
-            <Unlock
-              className={`h-5 w-5 shrink-0 mt-0.5 ${
-                mode === 'open' ? 'text-success' : 'text-text-muted'
+            <Icon
+              className={`h-4 w-4 ${
+                mode === id ? 'text-accent-light' : 'text-text-muted'
               }`}
             />
-            <div>
-              <div className="text-sm font-bold text-text">
-                Свободный вход (Открытый лобак)
-              </div>
-              <div className="text-xs text-text-muted mt-1">
-                Любой авторизованный игрок может зайти и занять свободный слот без ввода пароля.
-              </div>
-            </div>
+            {title}
           </button>
-
-          <button
-            type="button"
-            onClick={() => setMode('password')}
-            className={`flex items-start gap-3 rounded-md border p-4 text-left transition-all ${
-              mode === 'password'
-                ? 'border-accent bg-accent/15 shadow-accent-glow'
-                : 'border-glass-border bg-bg-elevated hover:border-white/20'
-            }`}
-          >
-            <Lock
-              className={`h-5 w-5 shrink-0 mt-0.5 ${
-                mode === 'password' ? 'text-accent' : 'text-text-muted'
-              }`}
-            />
-            <div>
-              <div className="text-sm font-bold text-text">
-                По паролю (Закрытый лобак)
-              </div>
-              <div className="text-xs text-text-muted mt-1">
-                Для подключения к комнате и просмотра данных лобби игрокам потребуется ввести ваш пароль.
-              </div>
-            </div>
-          </button>
-        </div>
+        ))}
       </div>
 
       {mode === 'password' && (
-        <div className="rounded-md border border-accent/40 bg-accent/10 p-4 space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-accent">
-            Пароль для подключения к лобби *
-          </label>
-          <Input
-            name="password"
-            type="text"
-            placeholder="Введите пароль (от 2 символов), например: dota123"
-            minLength={2}
-            maxLength={64}
-            required
-          />
-          <p className="text-xs text-text-muted">
-            Передайте этот пароль друзьям или участникам матча — без него занять слот в лобби нельзя.
-          </p>
-        </div>
+        <Input
+          name="password"
+          type="text"
+          placeholder="Пароль (от 2 символов)"
+          minLength={2}
+          maxLength={64}
+          required
+        />
       )}
     </div>
   );

@@ -1,11 +1,10 @@
-// [Phase: MVP v1] Home / Landing Page — Powered Strictly by Real Module Services & DB
+// Home page
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import {
   Swords,
   Gamepad2,
   Lock,
-  Unlock,
   Users,
   Trophy,
   Calendar,
@@ -26,6 +25,34 @@ import { EmptyState } from '@/components/ui/states';
 import { TeamCard } from '@/components/teams/team-card';
 import { formatDate } from '@/lib/utils';
 
+function SectionHeader({
+  icon,
+  title,
+  href,
+  linkLabel,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  href: string;
+  linkLabel: string;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <h2 className="text-lg font-semibold text-text flex items-center gap-2">
+        <span className="text-accent-light">{icon}</span>
+        {title}
+      </h2>
+      <Link
+        href={href}
+        className="text-sm text-accent-light hover:text-text flex items-center gap-1 transition-colors"
+      >
+        {linkLabel}
+        <ArrowRight className="h-3.5 w-3.5" />
+      </Link>
+    </div>
+  );
+}
+
 export default async function HomePage({
   searchParams,
 }: {
@@ -42,181 +69,103 @@ export default async function HomePage({
   const activeTournamentsCount = tournaments.filter(
     (tr) => tr.status === 'registration' || tr.status === 'in_progress',
   ).length;
-
-  const activeLobbiesCount = lobbies.filter(
+  const openLobbies = lobbies.filter(
     (lb) => lb.status === 'waiting' || lb.status === 'in_progress',
-  ).length;
+  );
+
+  const stats = [
+    { label: t('statsActiveTournaments'), value: activeTournamentsCount },
+    { label: t('statsRegisteredTeams'), value: catalog.total },
+    { label: t('statsCompletedMatches'), value: openLobbies.length },
+  ];
 
   return (
     <div className="space-y-12">
-      {/* Auth Error Alert */}
       {searchParams?.authError && (
-        <div className="rounded-md bg-danger/15 border border-danger/30 px-4 py-3 text-sm text-danger">
-          Ошибка входа через Steam: <code>{searchParams.authError}</code>
+        <div className="rounded-md bg-danger/10 border border-danger/30 px-4 py-3 text-sm text-danger">
+          Не удалось войти через Steam: <code>{searchParams.authError}</code>
         </div>
       )}
 
-      {/* Hero Section */}
-      <section className="glass-elevated rounded-lg p-8 md:p-10 border border-glass-border relative overflow-hidden">
-        <div className="max-w-3xl space-y-5">
-          <span className="inline-flex items-center gap-2 rounded-sm bg-accent-soft border border-accent/30 px-3 py-1 text-xs font-semibold text-accent">
-            <Swords className="h-3.5 w-3.5" />
-            Dota turnir • {t('badge')}
-          </span>
-          <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-text leading-tight">
+      {/* Hero */}
+      <section className="glass-elevated rounded-lg px-8 py-12 md:px-12 md:py-16 relative overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-accent/20 blur-3xl"
+        />
+        <div className="relative max-w-2xl space-y-5">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-text leading-[1.1]">
             {t('title')}
           </h1>
-          <p className="text-base text-text-muted leading-relaxed">
-            {t('subtitle')}
-          </p>
+          <p className="text-base md:text-lg text-text-muted">{t('subtitle')}</p>
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Link href="/tournaments">
+            <Link href="/lobbies">
               <Button variant="primary" size="lg">
-                <Swords className="h-4 w-4" />
+                <Gamepad2 className="h-4 w-4" />
+                Найти лобби
+              </Button>
+            </Link>
+            <Link href="/tournaments">
+              <Button variant="secondary" size="lg">
+                <Swords className="h-4 w-4 text-accent-light" />
                 {t('exploreTournaments')}
               </Button>
             </Link>
-            <Link href="/lobbies">
-              <Button variant="secondary" size="lg">
-                <Gamepad2 className="h-4 w-4 text-accent" />
-                Лобби (Лобаки 5x5)
-              </Button>
-            </Link>
-            <Link href="/teams">
-              <Button variant="secondary" size="lg">
-                <Users className="h-4 w-4 text-accent" />
-                {t('browseTeams')}
-              </Button>
-            </Link>
-            {user && (
-              <>
-                <Link href="/lobbies/new">
-                  <Button variant="outline" size="lg">
-                    <Plus className="h-4 w-4 text-accent" />
-                    Создать лобби
-                  </Button>
-                </Link>
-                <Link href="/tournaments/new">
-                  <Button variant="outline" size="lg">
-                    <Plus className="h-4 w-4 text-accent" />
-                    Создать турнир
-                  </Button>
-                </Link>
-              </>
-            )}
           </div>
         </div>
 
-        {/* Real Platform Metrics from DB */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 pt-8 border-t border-glass-border">
-          <div className="bg-bg/80 rounded-md p-4 border border-glass-border">
-            <div className="text-xs text-text-muted">{t('statsActiveTournaments')}</div>
-            <div className="text-2xl font-bold text-text mt-1">
-              {activeTournamentsCount}
+        <div className="relative grid grid-cols-3 gap-3 mt-10 max-w-2xl">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className="rounded-md bg-bg/60 border border-glass-border px-4 py-3"
+            >
+              <div className="text-2xl font-bold text-text">{s.value}</div>
+              <div className="text-xs text-text-muted mt-0.5">{s.label}</div>
             </div>
-          </div>
-          <div className="bg-bg/80 rounded-md p-4 border border-glass-border">
-            <div className="text-xs text-text-muted">{t('statsRegisteredTeams')}</div>
-            <div className="text-2xl font-bold text-text mt-1">
-              {catalog.total}
-            </div>
-          </div>
-          <div className="bg-bg/80 rounded-md p-4 border border-glass-border">
-            <div className="text-xs text-text-muted">{t('statsCompletedMatches')}</div>
-            <div className="text-2xl font-bold text-accent mt-1">
-              {activeLobbiesCount}
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* Active Custom Lobbies ("Лобби / Лобаки") */}
+      {/* Lobbies */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-text flex items-center gap-2">
-            <Gamepad2 className="h-5 w-5 text-accent" />
-            Открытые и приватные лобби (Лобаки 5x5 и 1x1)
-          </h2>
-          <div className="flex items-center gap-3">
-            {user && (
-              <Link href="/lobbies/new">
-                <Button variant="secondary" size="sm">
-                  <Plus className="h-3.5 w-3.5 text-accent" />
-                  Создать лобби
-                </Button>
-              </Link>
-            )}
-            <Link
-              href="/lobbies"
-              className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
-            >
-              Все лобби
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
+        <SectionHeader
+          icon={<Gamepad2 className="h-5 w-5" />}
+          title="Лобби"
+          href="/lobbies"
+          linkLabel="Все лобби"
+        />
 
-        {lobbies.length === 0 ? (
+        {openLobbies.length === 0 ? (
           <EmptyState
-            title="Открытых лобби пока нет"
-            description="Создайте первый открытый лобак со свободным входом или комнату по паролю для друзей."
+            title="Пока нет лобби"
             actionLabel={user ? 'Создать лобби' : 'Войти через Steam'}
             actionHref={user ? '/lobbies/new' : '/api/auth/steam/login'}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {lobbies.slice(0, 3).map((lobby) => (
+            {openLobbies.slice(0, 3).map((lobby) => (
               <Card
                 key={lobby.id}
-                className="flex flex-col justify-between gap-4 hover:border-white/20"
+                href={`/lobbies/${lobby.id}`}
+                className="space-y-3"
               >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <StatusBadge
-                      status={lobby.status}
-                      label={
-                        lobby.status === 'waiting'
-                          ? 'Открыт набор'
-                          : lobby.status === 'in_progress'
-                            ? 'LIVE'
-                            : 'Завершён'
-                      }
-                    />
-                    {lobby.hasPassword ? (
-                      <span className="inline-flex items-center gap-1 rounded-sm bg-accent/15 border border-accent/40 px-2 py-0.5 text-xs font-semibold text-accent">
-                        <Lock className="h-3 w-3" />
-                        По паролю
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-sm bg-success/15 border border-success/30 px-2 py-0.5 text-xs font-semibold text-success">
-                        <Unlock className="h-3 w-3" />
-                        Свободный вход
-                      </span>
-                    )}
-                  </div>
-
-                  <Link
-                    href={`/lobbies/${lobby.id}`}
-                    className="block text-lg font-bold text-text hover:text-accent transition-colors"
-                  >
-                    {lobby.name}
-                  </Link>
-
-                  <p className="text-xs text-text-muted line-clamp-2">
-                    {lobby.description ||
-                      `${LOBBY_GAME_MODE_LABELS[lobby.gameMode]} • Сервер: ${lobby.serverLocation}`}
-                  </p>
+                <div className="flex items-center justify-between gap-2">
+                  <StatusBadge
+                    status={lobby.status}
+                    label={lobby.status === 'waiting' ? 'Набор' : 'LIVE'}
+                  />
+                  {lobby.hasPassword && (
+                    <Lock className="h-3.5 w-3.5 text-accent-light" />
+                  )}
                 </div>
-
-                <div className="pt-3 border-t border-glass-border flex items-center justify-between text-xs text-text-muted">
-                  <span>
-                    Хост: <strong className="text-text">{lobby.host.nickname}</strong>
-                  </span>
-                  <span className="font-mono">
-                    Слоты:{' '}
-                    <strong className="text-accent">
-                      {lobby.activePlayersCount}/{lobby.maxPlayers}
-                    </strong>
+                <div className="text-lg font-semibold text-text truncate">
+                  {lobby.name}
+                </div>
+                <div className="flex items-center justify-between text-xs text-text-muted pt-2 border-t border-glass-border">
+                  <span>{LOBBY_GAME_MODE_LABELS[lobby.gameMode]}</span>
+                  <span className="font-mono text-text">
+                    {lobby.activePlayersCount}/{lobby.maxPlayers}
                   </span>
                 </div>
               </Card>
@@ -225,26 +174,18 @@ export default async function HomePage({
         )}
       </section>
 
-      {/* Featured Tournaments */}
+      {/* Tournaments */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-text flex items-center gap-2">
-            <Swords className="h-5 w-5 text-accent" />
-            {t('featuredTournaments')}
-          </h2>
-          <Link
-            href="/tournaments"
-            className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
-          >
-            Все турниры
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
+        <SectionHeader
+          icon={<Swords className="h-5 w-5" />}
+          title={t('featuredTournaments')}
+          href="/tournaments"
+          linkLabel="Все турниры"
+        />
 
         {tournaments.length === 0 ? (
           <EmptyState
-            title="Активных турниров пока нет"
-            description="Создайте первый турнир на платформе, чтобы открыть регистрацию для команд."
+            title="Пока нет турниров"
             actionLabel={user ? 'Создать турнир' : 'Войти через Steam'}
             actionHref={user ? '/tournaments/new' : '/api/auth/steam/login'}
           />
@@ -253,46 +194,30 @@ export default async function HomePage({
             {tournaments.slice(0, 6).map((tr) => (
               <Card
                 key={tr.id}
-                className="flex flex-col justify-between gap-4 hover:border-white/20 overflow-hidden"
+                href={`/tournaments/${tr.slug}`}
+                className="overflow-hidden space-y-3"
               >
-                <div className="space-y-2.5">
-                  {tr.coverUrl && (
-                    <div className="-mx-5 -mt-5 mb-3 h-36 overflow-hidden border-b border-glass-border">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={tr.coverUrl}
-                        alt={tr.name}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between gap-2">
-                    <StatusBadge status={tr.status} />
-                    <span className="text-xs font-mono text-text-muted uppercase">
-                      {tr.region} • {tr.format === 'round_robin' ? 'Round Robin' : 'Single Elim'}
-                    </span>
+                {tr.coverUrl && (
+                  <div className="-mx-5 -mt-5 mb-3 h-36 overflow-hidden border-b border-glass-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={tr.coverUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
                   </div>
-                  <Link
-                    href={`/tournaments/${tr.slug}`}
-                    className="block text-lg font-bold text-text hover:text-accent transition-colors"
-                  >
-                    {tr.name}
-                  </Link>
-                  <p className="text-xs text-text-muted line-clamp-2">
-                    {tr.description}
-                  </p>
+                )}
+                <StatusBadge status={tr.status} />
+                <div className="text-lg font-semibold text-text truncate">
+                  {tr.name}
                 </div>
-
-                <div className="pt-3 border-t border-glass-border flex items-center justify-between text-xs text-text-muted">
+                <div className="flex items-center justify-between text-xs text-text-muted pt-2 border-t border-glass-border">
                   <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5 text-accent" />
+                    <Calendar className="h-3.5 w-3.5" />
                     {formatDate(tr.startsAt)}
                   </span>
-                  <span>
-                    Команд:{' '}
-                    <strong className="text-text">
-                      {tr._count.registrations}/{tr.maxTeams}
-                    </strong>
+                  <span className="font-mono text-text">
+                    {tr._count.registrations}/{tr.maxTeams}
                   </span>
                 </div>
               </Card>
@@ -301,28 +226,21 @@ export default async function HomePage({
         )}
       </section>
 
-      {/* Top Platform Teams */}
+      {/* Teams */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-text flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-accent" />
-            {t('topTeams')}
-          </h2>
-          <Link
-            href="/teams"
-            className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
-          >
-            Каталог команд
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
+        <SectionHeader
+          icon={<Trophy className="h-5 w-5" />}
+          title={t('topTeams')}
+          href="/teams"
+          linkLabel="Все команды"
+        />
 
         {catalog.items.length === 0 ? (
           <EmptyState
-            title="В каталоге пока нет команд"
-            description="Зарегистрируйте свою команду после входа через Steam, чтобы участвовать в турнирах."
+            title="Пока нет команд"
             actionLabel={user ? 'Создать команду' : 'Войти через Steam'}
             actionHref={user ? '/teams/new' : '/api/auth/steam/login'}
+            icon={<Users className="h-5 w-5" />}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -332,6 +250,17 @@ export default async function HomePage({
           </div>
         )}
       </section>
+
+      {user && (
+        <div className="flex justify-center">
+          <Link href="/teams/new">
+            <Button variant="outline">
+              <Plus className="h-4 w-4" />
+              Создать команду
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

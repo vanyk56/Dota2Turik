@@ -48,22 +48,12 @@ export default async function RootLayout({
           <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
             {children}
           </main>
-          <footer className="border-t border-glass-border bg-bg/90 py-6 mt-16">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-text-muted">
-              <div className="flex items-center gap-2.5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/icon.png"
-                  alt="Dota turnir"
-                  className="h-6 w-6 object-contain"
-                />
-                <span>
-                  <strong className="text-text">Dota turnir</strong> — Турниры и кастомные лобби по Dota 2.
-                </span>
-              </div>
-              <div className="text-text-muted">
-                © {new Date().getFullYear()} Dota turnir
-              </div>
+          <footer className="border-t border-glass-border bg-bg/90 py-5 mt-16">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 text-xs text-text-muted">
+              <span>
+                <strong className="text-text font-semibold">Dota turnir</strong>
+              </span>
+              <span>© {new Date().getFullYear()}</span>
             </div>
           </footer>
         </NextIntlClientProvider>

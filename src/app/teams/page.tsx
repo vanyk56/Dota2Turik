@@ -4,7 +4,6 @@ import { getTranslations } from 'next-intl/server';
 import { Plus, Search, KeyRound } from 'lucide-react';
 import { getCurrentUser } from '@/modules/auth/service';
 import { searchTeamsCatalog } from '@/modules/catalog/service';
-import { getTeamDetailByTag } from '@/modules/teams/service';
 import { joinByInviteTokenAction } from '@/modules/teams/actions';
 import { PLATFORM_CONFIG } from '@/lib/config';
 import { Button } from '@/components/ui/button';
@@ -16,10 +15,6 @@ import {
   Pagination,
 } from '@/components/ui/states';
 import { TeamCard } from '@/components/teams/team-card';
-import {
-  TeamDetailPanel,
-  type TeamDetailPanelData,
-} from '@/components/teams/team-detail-panel';
 
 export default async function TeamsCatalogPage({
   searchParams,
@@ -32,7 +27,7 @@ export default async function TeamsCatalogPage({
     rosterFill?: 'all' | 'full' | 'open';
     sortBy?: 'rating' | 'tournaments' | 'wins' | 'created';
     page?: string;
-    preview?: string;
+    
   };
 }) {
   const query = searchParams?.q ?? '';
@@ -58,9 +53,6 @@ export default async function TeamsCatalogPage({
     getTranslations('teams'),
   ]);
 
-  const previewTag = searchParams?.preview ?? catalog.items[0]?.tag ?? null;
-  const previewTeam = previewTag ? await getTeamDetailByTag(previewTag) : null;
-
   const buildUrl = (overrides: Record<string, string | number | undefined>) => {
     const params = new URLSearchParams();
     const merged = {
@@ -71,7 +63,6 @@ export default async function TeamsCatalogPage({
       rosterFill: rosterFill !== 'all' ? rosterFill : undefined,
       sortBy: sortBy !== 'rating' ? sortBy : undefined,
       page: page > 1 ? page : undefined,
-      preview: previewTag || undefined,
       ...overrides,
     };
     Object.entries(merged).forEach(([k, v]) => {
@@ -104,24 +95,24 @@ export default async function TeamsCatalogPage({
         }
       />
 
-      {/* Quick Join by One-Time Invite Code/Link */}
+      {/* Quick join by invite code */}
       {user && (
         <form
           action={joinByInviteTokenAction}
-          className="glass-panel rounded-md p-3.5 flex flex-col sm:flex-row items-center gap-3"
+          className="glass-panel rounded-md p-3 flex flex-col sm:flex-row items-center gap-3"
         >
-          <div className="flex items-center gap-2 text-xs font-medium text-text-muted shrink-0">
-            <KeyRound className="h-4 w-4 text-accent" />
-            Вступить по одноразовому коду приглашения:
+          <div className="flex items-center gap-2 text-sm text-text-muted shrink-0">
+            <KeyRound className="h-4 w-4 text-accent-light" />
+            Код приглашения
           </div>
           <Input
             name="token"
-            placeholder="Вставьте 64-символьный токен приглашения..."
+            placeholder="Вставьте код..."
             className="flex-1 h-9 text-xs font-mono"
             required
           />
           <Button type="submit" variant="secondary" size="sm">
-            Вступить в команду
+            Вступить
           </Button>
         </form>
       )}
@@ -187,43 +178,26 @@ export default async function TeamsCatalogPage({
         </FilterBar>
       </form>
 
-      {/* Catalog Grid + Desktop Right Detail Panel (Section 8) */}
+      {/* Catalog Grid */}
       {catalog.items.length === 0 ? (
         <EmptyState
           title={t('noTeamsFound')}
-          description={t('noTeamsDescription')}
           actionLabel={user ? t('createTeam') : undefined}
           actionHref={user ? '/teams/new' : undefined}
         />
       ) : (
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
-          <div className="flex-1 w-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {catalog.items.map((team) => (
-                <TeamCard
-                  key={team.id}
-                  team={team}
-                  isSelected={previewTeam?.id === team.id}
-                  selectHref={buildUrl({ preview: team.tag })}
-                />
-              ))}
-            </div>
-
-            <Pagination
-              page={catalog.page}
-              totalPages={catalog.totalPages}
-              buildHref={(targetPage) => buildUrl({ page: targetPage })}
-            />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {catalog.items.map((team) => (
+              <TeamCard key={team.id} team={team} />
+            ))}
           </div>
 
-          {previewTeam && (
-            <aside className="hidden lg:block w-[400px] shrink-0 sticky top-20">
-              <TeamDetailPanel
-                team={previewTeam as unknown as TeamDetailPanelData}
-                compact
-              />
-            </aside>
-          )}
+          <Pagination
+            page={catalog.page}
+            totalPages={catalog.totalPages}
+            buildHref={(targetPage) => buildUrl({ page: targetPage })}
+          />
         </div>
       )}
     </div>

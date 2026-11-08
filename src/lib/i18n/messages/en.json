@@ -13,14 +13,14 @@
     "createTournament": "Create Tournament"
   },
   "home": {
-    "badge": "Tournaments & 5v5 Lobbies",
-    "title": "Build your team, host a custom lobby, or compete in Dota 2 tournaments",
-    "subtitle": "Join competitive brackets, create open 5v5 and 1v1 lobbies or private password-protected rooms for friends, and climb the team leaderboard.",
+    "badge": "Dota 2",
+    "title": "Tournaments and lobbies for Dota 2",
+    "subtitle": "Play tournaments, host 5v5 lobbies and climb the leaderboard.",
     "exploreTournaments": "Browse Tournaments",
     "browseTeams": "Team Catalog",
     "statsActiveTournaments": "Active Tournaments",
     "statsRegisteredTeams": "Registered Teams",
-    "statsCompletedMatches": "Active Lobbies",
+    "statsCompletedMatches": "Lobbies",
     "featuredTournaments": "Featured Tournaments",
     "topTeams": "Top Teams"
   },
@@ -50,7 +50,7 @@
   },
   "teams": {
     "catalogTitle": "Team Catalog",
-    "catalogSubtitle": "Search teams by name, tag, player nickname, region, and recruitment status",
+    "catalogSubtitle": "",
     "searchPlaceholder": "Search by team name, tag, or player nickname...",
     "allRegions": "All Regions",
     "allCountries": "All Countries",
@@ -76,7 +76,7 @@
   },
   "tournaments": {
     "title": "Dota 2 Tournaments",
-    "subtitle": "Official and community tournaments with interactive Single Elimination & Round Robin brackets",
+    "subtitle": "",
     "createTournament": "Create Tournament",
     "format_single_elimination": "Single Elimination",
     "format_round_robin": "Round Robin",

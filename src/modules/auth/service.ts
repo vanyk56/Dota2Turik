@@ -1,9 +1,11 @@
 // [Phase: MVP v1] Server Session & Steam Authentication Service (Section 5)
 import crypto from 'node:crypto';
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import type { User } from '@prisma/client';
 import { db } from '@/lib/db';
 import { PLATFORM_CONFIG } from '@/lib/config';
+import { isOwnerSteamId } from '@/lib/admin';
 import { sha256Hex } from '@/server/crypto';
 import { fetchSteamProfileSummary } from './steam-api';
 import { recordAuditLog } from '@/modules/audit/service';
@@ -19,9 +21,7 @@ export function generateSessionToken(): { rawToken: string; tokenHash: string } 
 export async function upsertUserFromSteam(steamId64: string): Promise<User> {
   const summary = await fetchSteamProfileSummary(steamId64);
   const now = new Date();
-  const adminCount = await db.user
-    .count({ where: { role: 'admin' } })
-    .catch(() => 1);
+  const isOwner = isOwnerSteamId(steamId64);
 
   const user = await db.user.upsert({
     where: { steamId64 },
@@ -32,7 +32,7 @@ export async function upsertUserFromSteam(steamId64: string): Promise<User> {
       visibility: summary.visibility,
       lastLoginAt: now,
       isAnonymized: false,
-      ...(adminCount === 0 ? { role: 'admin' } : {}),
+      ...(isOwner ? { role: 'admin' as const } : {}),
     },
     create: {
       steamId64,
@@ -41,7 +41,7 @@ export async function upsertUserFromSteam(steamId64: string): Promise<User> {
       profileUrl: summary.profileUrl,
       visibility: summary.visibility,
       lastLoginAt: now,
-      role: adminCount === 0 ? 'admin' : 'user',
+      role: isOwner ? 'admin' : 'user',
     },
   });
 
@@ -105,7 +105,7 @@ export async function createServerSession(
   return rawToken;
 }
 
-export async function getCurrentUser(): Promise<User | null> {
+export const getCurrentUser = cache(async (): Promise<User | null> => {
   try {
     const cookieStore = cookies();
     const rawToken = cookieStore.get(PLATFORM_CONFIG.sessions.cookieName)?.value;
@@ -148,11 +148,27 @@ export async function getCurrentUser(): Promise<User | null> {
         .catch(() => null);
     }
 
-    return session.user;
+    // `admin` is reserved for owner SteamIDs only; anyone else is downgraded.
+    const user = session.user;
+    const shouldBeAdmin = isOwnerSteamId(user.steamId64);
+    if (shouldBeAdmin && user.role !== 'admin') {
+      void db.user
+        .update({ where: { id: user.id }, data: { role: 'admin' } })
+        .catch(() => null);
+      return { ...user, role: 'admin' };
+    }
+    if (!shouldBeAdmin && user.role === 'admin') {
+      void db.user
+        .update({ where: { id: user.id }, data: { role: 'user' } })
+        .catch(() => null);
+      return { ...user, role: 'user' };
+    }
+
+    return user;
   } catch {
     return null;
   }
-}
+});
 
 export async function revokeCurrentSession(): Promise<void> {
   const cookieStore = cookies();

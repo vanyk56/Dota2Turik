@@ -15,12 +15,15 @@ const config: Config = {
           DEFAULT: 'var(--bg)',
           elevated: 'var(--bg-elevated)',
         },
+        surface: 'var(--surface)',
         glass: {
           DEFAULT: 'var(--glass)',
           border: 'var(--glass-border)',
         },
         accent: {
           DEFAULT: 'var(--accent)',
+          light: 'var(--accent-light)',
+          deep: 'var(--accent-deep)',
           soft: 'var(--accent-soft)',
         },
         text: {

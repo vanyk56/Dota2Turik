@@ -1,7 +1,7 @@
 {
   "nav": {
     "tournaments": "Турниры",
-    "lobbies": "Лобби (Лобаки)",
+    "lobbies": "Лобби",
     "teams": "Команды",
     "leaderboard": "Рейтинг",
     "admin": "Админ-панель",
@@ -13,14 +13,14 @@
     "createTournament": "Создать турнир"
   },
   "home": {
-    "badge": "Турниры и лобби 5x5",
-    "title": "Собери команду, создай лобби или сразись в турнире по Dota 2",
-    "subtitle": "Участвуй в командных турнирах, создавай открытые лобаки 5x5 и 1x1 или закрытые комнаты по паролю для друзей и поднимайся в рейтинге.",
+    "badge": "Dota 2",
+    "title": "Турниры и лобби для Dota 2",
+    "subtitle": "Играй в турнирах, собирай лобби 5x5 и поднимайся в рейтинге.",
     "exploreTournaments": "Смотреть турниры",
     "browseTeams": "Каталог команд",
     "statsActiveTournaments": "Активных турниров",
     "statsRegisteredTeams": "Команд в каталоге",
-    "statsCompletedMatches": "Открытых лобби",
+    "statsCompletedMatches": "Лобби",
     "featuredTournaments": "Актуальные турниры",
     "topTeams": "Лидеры рейтинга"
   },
@@ -50,7 +50,7 @@
   },
   "teams": {
     "catalogTitle": "Каталог команд",
-    "catalogSubtitle": "Поиск коллективов по названию, тегу, игрокам, региону и статусу набора",
+    "catalogSubtitle": "",
     "searchPlaceholder": "Поиск по названию, тегу или нику игрока...",
     "allRegions": "Все регионы",
     "allCountries": "Все страны",
@@ -76,7 +76,7 @@
   },
   "tournaments": {
     "title": "Турниры Dota 2",
-    "subtitle": "Официальные и комьюнити-турниры с интерактивными сетками Single Elimination и Round Robin",
+    "subtitle": "",
     "createTournament": "Создать турнир",
     "format_single_elimination": "Single Elimination",
     "format_round_robin": "Round Robin",

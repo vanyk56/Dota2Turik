@@ -102,7 +102,8 @@ export default async function TournamentsPage({
           {tournaments.map((tr) => (
             <Card
               key={tr.id}
-              className="flex flex-col justify-between gap-4 hover:border-white/20 overflow-hidden"
+              href={`/tournaments/${tr.slug}`}
+              className="flex flex-col justify-between gap-4 overflow-hidden"
             >
               <div className="space-y-3">
                 {tr.coverUrl && (
@@ -136,7 +137,7 @@ export default async function TournamentsPage({
                 <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
                   <div className="bg-bg-elevated rounded-sm p-2 border border-glass-border">
                     <div className="text-text-muted flex items-center gap-1">
-                      <Swords className="h-3 w-3 text-accent" />
+                      <Swords className="h-3 w-3 text-accent-light" />
                       Формат
                     </div>
                     <div className="font-semibold text-text mt-0.5">
@@ -148,11 +149,11 @@ export default async function TournamentsPage({
 
                   <div className="bg-bg-elevated rounded-sm p-2 border border-glass-border">
                     <div className="text-text-muted flex items-center gap-1">
-                      <Trophy className="h-3 w-3 text-accent" />
+                      <Trophy className="h-3 w-3 text-accent-light" />
                       Призовой фонд
                     </div>
                     <div className="font-semibold text-text truncate mt-0.5">
-                      {tr.prizePool || 'Рейтинговые очки'}
+                      {tr.prizePool || '—'}
                     </div>
                   </div>
                 </div>

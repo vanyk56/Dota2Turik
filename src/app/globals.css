@@ -2,26 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-/* [Phase: MVP v1] Design System Tokens (Section 12 - Railway Dark Minimalist Theme) */
+/* Design tokens — deep violet palette */
 :root {
-  --bg: #0B0B12;
-  --bg-elevated: #12121B;
-  --glass: rgba(255, 255, 255, 0.04);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --accent: #8B5CF6;
-  --accent-soft: rgba(139, 92, 246, 0.15);
-  --accent-glow: 0 0 24px rgba(139, 92, 246, 0.25);
-  --text: #F4F4F8;
-  --text-muted: #9494A8;
-  --success: #22C55E;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --dot-size: 1px;
-  --dot-gap: 24px;
-  --dot-color: rgba(255, 255, 255, 0.06);
+  --bg: #0a0712;
+  --bg-elevated: #120d1f;
+  --surface: #17102a;
+  --glass: rgba(23, 16, 42, 0.7);
+  --glass-border: rgba(167, 139, 250, 0.13);
+  --accent: #8b5cf6;
+  --accent-light: #a78bfa;
+  --accent-deep: #6d28d9;
+  --accent-soft: rgba(139, 92, 246, 0.14);
+  --accent-glow: 0 4px 24px rgba(124, 58, 237, 0.28);
+  --text: #f3f0fa;
+  --text-muted: #9a93b3;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
 }
 
 * {
@@ -38,28 +38,31 @@ body {
   overflow-x: hidden;
 }
 
-/* Infinite Dot Matrix Canvas Background */
+/* Soft violet ambient background (no heavy filters) */
 .bg-dot-matrix {
   background-color: var(--bg);
-  background-image: radial-gradient(var(--dot-color) var(--dot-size), transparent var(--dot-size));
-  background-size: var(--dot-gap) var(--dot-gap);
+  background-image:
+    radial-gradient(900px 420px at 15% -8%, rgba(124, 58, 237, 0.2), transparent 70%),
+    radial-gradient(700px 360px at 95% 0%, rgba(192, 132, 252, 0.1), transparent 70%);
+  background-repeat: no-repeat;
 }
 
-/* Glassmorphism Surface (max 2 levels per Section 12) */
+/* Surfaces (flat, fast — no backdrop blur) */
 .glass-panel {
   background: var(--glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
 }
 
 .glass-elevated {
-  background: rgba(18, 18, 27, 0.82);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
+  background: linear-gradient(160deg, rgba(34, 22, 62, 0.85), rgba(18, 13, 31, 0.9));
+  border: 1px solid rgba(167, 139, 250, 0.18);
 }
 
+/* Interactive card hover */
+.card-link:hover {
+  border-color: rgba(167, 139, 250, 0.4);
+  background: rgba(30, 20, 54, 0.85);
+}
 /* Focus Accessibility (WCAG AA) */
 :focus-visible {
   outline: 2px solid var(--accent);

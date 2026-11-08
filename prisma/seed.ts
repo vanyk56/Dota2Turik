@@ -1,6 +1,7 @@
 // [Phase: MVP v1] Database Initialization & Cleanup Script: Ensures Active Rating Formula & Removes Any Demo/Fake Data
 import { PrismaClient, type Prisma } from '@prisma/client';
 import { DEFAULT_RATING_FORMULA_CONFIG } from '../src/modules/ratings/engine';
+import { getOwnerSteamIds } from '../src/lib/admin';
 
 const prisma = new PrismaClient();
 
@@ -90,24 +91,20 @@ async function main() {
     })
     .catch(() => null);
 
-  // 5b. Ensure the first real Steam user (platform owner, e.g. garry) has 'admin' role
-  const adminCount = await prisma.user
-    .count({ where: { role: 'admin' } })
-    .catch(() => 0);
-  if (adminCount === 0) {
-    const firstRealUser = await prisma.user
-      .findFirst({ orderBy: { createdAt: 'asc' } })
-      .catch(() => null);
-    if (firstRealUser) {
-      await prisma.user
-        .update({
-          where: { id: firstRealUser.id },
-          data: { role: 'admin' },
-        })
-        .catch(() => null);
-      console.log(`👑 Promoted platform owner ${firstRealUser.nickname} to admin.`);
-    }
-  }
+  // 5b. Only owner SteamIDs may be admins: promote owners, demote everyone else
+  const ownerIds = getOwnerSteamIds();
+  await prisma.user
+    .updateMany({
+      where: { role: 'admin', steamId64: { notIn: ownerIds } },
+      data: { role: 'user' },
+    })
+    .catch(() => null);
+  await prisma.user
+    .updateMany({
+      where: { steamId64: { in: ownerIds } },
+      data: { role: 'admin' },
+    })
+    .catch(() => null);
 
   // 6. Normalize legacy region codes (EEU/WEU -> EU, NA -> US, SEA -> ASIA) on real teams & tournaments
   await prisma.team
