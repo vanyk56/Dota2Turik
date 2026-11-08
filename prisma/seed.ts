@@ -28,6 +28,14 @@ const SEED_TEAMS = [
 ];
 
 async function main() {
+  const existingTeamsCount = await prisma.team.count().catch(() => 0);
+  if (existingTeamsCount > 0 && process.env.FORCE_SEED !== 'true') {
+    console.log(
+      `ℹ️ Database already contains ${existingTeamsCount} teams. Skipping initial seed (set FORCE_SEED=true to re-seed).`,
+    );
+    return;
+  }
+
   console.log('🌱 Starting Dota 2 Platform seed...');
 
   // 1. Active Rating Formula v1
