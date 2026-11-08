@@ -1,10 +1,17 @@
 // [Phase: v3 / Custom Lobby Bot] Real Steam & Dota 2 Game Coordinator (AppID 570) Lobby Bot
+// Features:
+// 1. Moves bot out of Radiant Slot 1 into Unassigned (DOTA_GC_TEAM_PLAYER_POOL = 4) via 7047
+// 2. Detects when a human player enters the Dota 2 lobby (via GC SharedObject update) and automatically
+//    leaves the lobby (7040), transferring Lobby Leader to the player and freeing the bot for new lobbies!
 import SteamUser from 'steam-user';
 import { db } from '@/lib/db';
 
 const DOTA2_APP_ID = 570;
 
 // Dota 2 Game Coordinator Message IDs (from Valve Protobufs)
+const k_ESOMsg_Update = 22;
+const k_ESOMsg_CacheSubscribed = 24;
+const k_ESOMsg_UpdateMultiple = 26;
 const k_EMsgGCClientHello = 4006;
 const k_EMsgGCClientWelcome = 4004;
 const k_EMsgGCInviteToLobby = 4512;
@@ -12,6 +19,10 @@ const k_EMsgGCAbandonCurrentGame = 7035;
 const k_EMsgGCPracticeLobbyCreate = 7038;
 const k_EMsgGCPracticeLobbyLeave = 7040;
 const k_EMsgGCPracticeLobbyLaunch = 7041;
+const k_EMsgGCPracticeLobbySetTeamSlot = 7047;
+
+// DOTA_GC_TEAM enum values
+const DOTA_GC_TEAM_PLAYER_POOL = 4; // «НЕОПРЕДЕЛИВШИЕСЯ» (Unassigned pool)
 
 // Minimal Pure-TS Protobuf Wire Format Encoder for Dota 2 GC Messages
 function encodeVarint(value: number | bigint): Buffer {
@@ -51,9 +62,6 @@ function encodeStringField(fieldNumber: number, str: string): Buffer {
   return encodeBytesField(fieldNumber, Buffer.from(str, 'utf8'));
 }
 
-/**
- * Encodes `CMsgClientHello` (4006) for Source 2 Dota 2 GC
- */
 function encodeClientHello(): Buffer {
   return Buffer.concat([
     encodeVarintField(3, 1), // client_session_need = 1
@@ -62,8 +70,19 @@ function encodeClientHello(): Buffer {
 }
 
 /**
- * Maps platform gameMode to Dota 2 `DOTA_GameMode` enum value
+ * Encodes `CMsgPracticeLobbySetTeamSlot` (7047) to move the bot out of Radiant Slot 1
+ * into `DOTA_GC_TEAM_PLAYER_POOL` (4 = Неопределившиеся)
  */
+function encodePracticeLobbySetTeamSlot(
+  team: number = DOTA_GC_TEAM_PLAYER_POOL,
+  slot = 0,
+): Buffer {
+  return Buffer.concat([
+    encodeVarintField(1, team), // team = 1
+    encodeVarintField(2, slot), // slot = 2
+  ]);
+}
+
 function mapGameModeToDotaEnum(gameMode: string): number {
   switch (gameMode) {
     case 'all_pick':
@@ -73,7 +92,7 @@ function mapGameModeToDotaEnum(gameMode: string): number {
     case 'random_draft':
       return 3; // DOTA_GAMEMODE_RD
     case 'mid_only':
-      return 21; // DOTA_GAMEMODE_1V1MID (or 11 for Mid Only)
+      return 21; // DOTA_GAMEMODE_1V1MID
     case 'turbo':
       return 23; // DOTA_GAMEMODE_TURBO
     default:
@@ -81,27 +100,21 @@ function mapGameModeToDotaEnum(gameMode: string): number {
   }
 }
 
-/**
- * Maps serverLocation / region to Valve Dota 2 `server_region` ID
- */
 function mapServerRegionToDotaId(serverLocation: string, region: string): number {
   const loc = serverLocation.toLowerCase();
-  if (loc.includes('stockholm')) return 8; // Stockholm (Russia / EU North)
+  if (loc.includes('stockholm')) return 8; // Stockholm
   if (loc.includes('luxembourg')) return 3; // Europe West
   if (loc.includes('frankfurt') || loc.includes('vienna') || loc.includes('warsaw')) {
-    return 9; // Europe East (Austria)
+    return 9; // Europe East
   }
   if (loc.includes('us east')) return 2; // US East
   if (loc.includes('singapore') || loc.includes('asia')) return 5; // SE Asia
   if (region === 'US') return 2;
   if (region === 'ASIA' || region === 'CN') return 5;
   if (region === 'BR') return 10;
-  return 8; // Default Stockholm (best ping for RU/EU)
+  return 8; // Default Stockholm
 }
 
-/**
- * Encodes `CMsgPracticeLobbyCreate` (7038) with nested `CMsgPracticeLobbySetDetails` (field 7)
- */
 function encodePracticeLobbyCreate(opts: {
   gameName: string;
   passKey: string;
@@ -112,7 +125,6 @@ function encodePracticeLobbyCreate(opts: {
   const serverRegionId = mapServerRegionToDotaId(opts.serverLocation, opts.region);
   const dotaGameMode = mapGameModeToDotaEnum(opts.gameMode);
 
-  // Nested CMsgPracticeLobbySetDetails
   const detailsParts: Buffer[] = [
     encodeStringField(2, opts.gameName), // game_name = 2
     encodeVarintField(4, serverRegionId), // server_region = 4
@@ -136,11 +148,15 @@ function encodePracticeLobbyCreate(opts: {
   ]);
 }
 
-/**
- * Encodes `CMsgInviteToLobby` (4512) with `fixed64 steam_id = 1`
- */
 function encodeInviteToLobby(steamId64: string): Buffer {
   return encodeFixed64Field(1, BigInt(steamId64));
+}
+
+function steamId64ToFixed64Buffer(steamId64: string): Buffer | null {
+  if (!/^\d{17}$/.test(steamId64)) return null;
+  const buf = Buffer.alloc(8);
+  buf.writeBigUInt64LE(BigInt(steamId64), 0);
+  return buf;
 }
 
 export interface DotaBotRuntimeState {
@@ -156,6 +172,8 @@ export interface DotaBotRuntimeState {
   guardDomain: string | null;
   lastError: string | null;
   activeLobbyId: string | null;
+  watchedPlayerBuffers: Buffer[];
+  autoHandoffTriggered: boolean;
   steamGuardCallback: ((code: string) => void) | null;
   gcHelloInterval: ReturnType<typeof setInterval> | null;
   autoInitAttempted: boolean;
@@ -174,6 +192,8 @@ function getRuntime(): DotaBotRuntimeState {
       guardDomain: null,
       lastError: null,
       activeLobbyId: null,
+      watchedPlayerBuffers: [],
+      autoHandoffTriggered: false,
       steamGuardCallback: null,
       gcHelloInterval: null,
       autoInitAttempted: false,
@@ -215,7 +235,6 @@ function clearGcHelloLoop(rt: DotaBotRuntimeState) {
 export async function getDotaBotStatus() {
   const rt = getRuntime();
 
-  // Auto-initialize once from DB or environment variables if disconnected
   if (!rt.autoInitAttempted && rt.status === 'disconnected') {
     rt.autoInitAttempted = true;
     const saved = await db.steamBotConfig
@@ -320,7 +339,6 @@ export async function startBotConnection(opts: {
     client.setPersona(SteamUser.EPersonaState.Online);
     client.gamesPlayed([DOTA2_APP_ID]);
 
-    // Begin Dota 2 Game Coordinator handshake (4006 -> 4004)
     clearGcHelloLoop(rt);
     const sendHello = () => {
       if (!rt.client || rt.status === 'ready_gc') {
@@ -343,7 +361,7 @@ export async function startBotConnection(opts: {
     rt.gcHelloInterval = setInterval(sendHello, 4000);
   });
 
-  client.on('receivedFromGC', (appid: number, msgType: number) => {
+  client.on('receivedFromGC', (appid: number, msgType: number, payload: Buffer) => {
     if (appid !== DOTA2_APP_ID) return;
 
     if (msgType === k_EMsgGCClientWelcome) {
@@ -351,6 +369,32 @@ export async function startBotConnection(opts: {
       rt.status = 'ready_gc';
       rt.lastError = null;
       void persistBotState({ status: 'ready_gc', lastError: null });
+      return;
+    }
+
+    // Detect when any invited human player joins the Dota 2 Lobby via GC SharedObject update!
+    // Once a human player is inside the lobby, the bot automatically leaves the lobby after 2.5s:
+    // 1. Valve automatically transfers "Лидер лобби" to that human player!
+    // 2. The bot disappears from the lobby slots completely!
+    // 3. The single bot is immediately free to create the next lobby (2nd, 3rd, 10th lobby)!
+    if (
+      (msgType === k_ESOMsg_Update ||
+        msgType === k_ESOMsg_CacheSubscribed ||
+        msgType === k_ESOMsg_UpdateMultiple) &&
+      rt.activeLobbyId &&
+      !rt.autoHandoffTriggered &&
+      rt.watchedPlayerBuffers.length > 0 &&
+      Buffer.isBuffer(payload)
+    ) {
+      const humanJoined = rt.watchedPlayerBuffers.some((playerBuf) =>
+        payload.includes(playerBuf),
+      );
+      if (humanJoined) {
+        rt.autoHandoffTriggered = true;
+        setTimeout(() => {
+          botLeaveLobbyAndRelease();
+        }, 2500);
+      }
     }
   });
 
@@ -413,6 +457,8 @@ export async function disconnectDotaBot() {
   rt.guardDomain = null;
   rt.lastError = null;
   rt.activeLobbyId = null;
+  rt.watchedPlayerBuffers = [];
+  rt.autoHandoffTriggered = false;
   await persistBotState({
     accountName: null,
     password: null,
@@ -425,7 +471,37 @@ export async function disconnectDotaBot() {
 }
 
 /**
- * Creates a real practice lobby inside Dota 2 Game Coordinator and invites all current participants!
+ * Leaves the current Dota 2 practice lobby (`7040`).
+ * If at least 1 human player is inside the lobby, Dota 2 keeps the lobby alive,
+ * promotes the human player to "Лидер лобби", and frees the bot to create new lobbies!
+ */
+export function botLeaveLobbyAndRelease(): boolean {
+  const rt = getRuntime();
+  if (!rt.client || rt.status !== 'ready_gc') {
+    return false;
+  }
+
+  try {
+    rt.client.sendToGC(
+      DOTA2_APP_ID,
+      k_EMsgGCPracticeLobbyLeave,
+      {},
+      Buffer.alloc(0),
+    );
+    rt.activeLobbyId = null;
+    rt.watchedPlayerBuffers = [];
+    rt.autoHandoffTriggered = false;
+    void persistBotState({ activeLobbyId: null });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Creates a real practice lobby inside Dota 2 Game Coordinator, immediately moves the bot
+ * out of Radiant Slot 1 into Unassigned («НЕОПРЕДЕЛИВШИЕСЯ»), invites all participants,
+ * and watches for the host/players to join so it can hand over leadership and free itself!
  */
 export async function botCreateDotaLobbyAndInvite(opts: {
   lobbyId: string;
@@ -445,7 +521,7 @@ export async function botCreateDotaLobbyAndInvite(opts: {
   }
 
   try {
-    // 1. Leave any previous practice lobby first so the bot isn't stuck in an old room
+    // 1. Leave any previous practice lobby first
     rt.client.sendToGC(
       DOTA2_APP_ID,
       k_EMsgGCPracticeLobbyLeave,
@@ -461,7 +537,13 @@ export async function botCreateDotaLobbyAndInvite(opts: {
 
     await new Promise((r) => setTimeout(r, 600));
 
-    // 2. Create the new Practice Lobby in Dota 2 GC
+    // 2. Watch for human participants joining this lobby so we can auto-handoff leadership
+    rt.watchedPlayerBuffers = opts.steamIds64
+      .map((id) => steamId64ToFixed64Buffer(id))
+      .filter((b): b is Buffer => b !== null);
+    rt.autoHandoffTriggered = false;
+
+    // 3. Create the new Practice Lobby in Dota 2 GC
     const createPayload = encodePracticeLobbyCreate({
       gameName: opts.gameName,
       passKey: opts.passKey,
@@ -480,8 +562,19 @@ export async function botCreateDotaLobbyAndInvite(opts: {
     rt.activeLobbyId = opts.lobbyId;
     await persistBotState({ activeLobbyId: opts.lobbyId });
 
-    // 3. Wait 1.2s for Valve GC to instantiate the lobby, then invite all participants by SteamID64
-    await new Promise((r) => setTimeout(r, 1200));
+    // 4. Wait 900ms for GC to place the bot in the lobby, then IMMEDIATELY move the bot
+    //    out of Radiant Slot 1 into DOTA_GC_TEAM_PLAYER_POOL (4 = «НЕОПРЕДЕЛИВШИЕСЯ»)
+    await new Promise((r) => setTimeout(r, 900));
+
+    rt.client.sendToGC(
+      DOTA2_APP_ID,
+      k_EMsgGCPracticeLobbySetTeamSlot,
+      {},
+      encodePracticeLobbySetTeamSlot(DOTA_GC_TEAM_PLAYER_POOL, 0),
+    );
+
+    // 5. Invite all participants by SteamID64
+    await new Promise((r) => setTimeout(r, 400));
 
     for (const steamId64 of opts.steamIds64) {
       if (/^\d{17}$/.test(steamId64)) {
@@ -503,9 +596,6 @@ export async function botCreateDotaLobbyAndInvite(opts: {
   }
 }
 
-/**
- * Sends a native Dota 2 in-game lobby invitation to a player's SteamID64
- */
 export function botInvitePlayerToDotaLobby(steamId64: string): boolean {
   const rt = getRuntime();
   if (!rt.client || rt.status !== 'ready_gc' || !/^\d{17}$/.test(steamId64)) {
@@ -513,6 +603,11 @@ export function botInvitePlayerToDotaLobby(steamId64: string): boolean {
   }
 
   try {
+    const buf = steamId64ToFixed64Buffer(steamId64);
+    if (buf && !rt.watchedPlayerBuffers.some((b) => b.equals(buf))) {
+      rt.watchedPlayerBuffers.push(buf);
+    }
+
     rt.client.sendToGC(
       DOTA2_APP_ID,
       k_EMsgGCInviteToLobby,
@@ -525,9 +620,6 @@ export function botInvitePlayerToDotaLobby(steamId64: string): boolean {
   }
 }
 
-/**
- * Launches the practice lobby match in Dota 2 GC (`k_EMsgGCPracticeLobbyLaunch`)
- */
 export function botLaunchDotaLobby(): boolean {
   const rt = getRuntime();
   if (!rt.client || rt.status !== 'ready_gc') {

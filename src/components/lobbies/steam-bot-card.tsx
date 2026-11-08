@@ -14,6 +14,7 @@ import {
   connectSteamBotAction,
   disconnectSteamBotAction,
   inviteMeWithBotAction,
+  releaseBotFromLobbyAction,
   spawnDotaLobbyWithBotAction,
   submitSteamGuardAction,
 } from '@/modules/lobbies/actions';
@@ -197,9 +198,22 @@ export function SteamBotCard({
             </form>
           )}
 
-          {botStatus.activeLobbyId === lobbyId && (
+          {canManageLobby && botStatus.activeLobbyId === lobbyId && (
+            <form action={releaseBotFromLobbyAction}>
+              <input type="hidden" name="lobbyId" value={lobbyId} />
+              <Button type="submit" variant="secondary" size="sm">
+                Передать мне Лидера в Dota 2 и освободить бота
+              </Button>
+            </form>
+          )}
+
+          {botStatus.activeLobbyId === lobbyId ? (
             <span className="text-xs text-success font-medium">
-              ✓ Бот держит открытым это лобби в Dota 2
+              ✓ Бот в этом лобби (автоматически выйдет и передаст вам Лидера после вашего входа)
+            </span>
+          ) : (
+            <span className="text-xs text-text-muted">
+              ✓ Бот свободен для создания новых лобби
             </span>
           )}
         </div>

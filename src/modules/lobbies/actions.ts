@@ -20,6 +20,7 @@ import {
 import {
   botCreateDotaLobbyAndInvite,
   botInvitePlayerToDotaLobby,
+  botLeaveLobbyAndRelease,
   disconnectDotaBot,
   startBotConnection,
   submitBotSteamGuardCode,
@@ -309,4 +310,21 @@ export async function inviteMeWithBotAction(formData: FormData) {
 
   revalidatePath(`/lobbies/${lobbyId}`);
   redirect(`/lobbies/${lobbyId}?botInvited=1`);
+}
+
+export async function releaseBotFromLobbyAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('UNAUTHORIZED');
+
+  const lobbyId = z.string().min(1).parse(formData.get('lobbyId'));
+  const lobby = await getCustomLobbyById(lobbyId, user.id, user.role);
+  if (!lobby || !lobby.canManage) {
+    throw new Error('FORBIDDEN_LOBBY_HOST_ONLY');
+  }
+
+  botLeaveLobbyAndRelease();
+
+  revalidatePath(`/lobbies/${lobbyId}`);
+  revalidatePath('/lobbies');
+  redirect(`/lobbies/${lobbyId}`);
 }
