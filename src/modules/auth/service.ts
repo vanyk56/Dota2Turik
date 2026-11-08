@@ -19,6 +19,9 @@ export function generateSessionToken(): { rawToken: string; tokenHash: string } 
 export async function upsertUserFromSteam(steamId64: string): Promise<User> {
   const summary = await fetchSteamProfileSummary(steamId64);
   const now = new Date();
+  const adminCount = await db.user
+    .count({ where: { role: 'admin' } })
+    .catch(() => 1);
 
   const user = await db.user.upsert({
     where: { steamId64 },
@@ -29,6 +32,7 @@ export async function upsertUserFromSteam(steamId64: string): Promise<User> {
       visibility: summary.visibility,
       lastLoginAt: now,
       isAnonymized: false,
+      ...(adminCount === 0 ? { role: 'admin' } : {}),
     },
     create: {
       steamId64,
@@ -37,6 +41,7 @@ export async function upsertUserFromSteam(steamId64: string): Promise<User> {
       profileUrl: summary.profileUrl,
       visibility: summary.visibility,
       lastLoginAt: now,
+      role: adminCount === 0 ? 'admin' : 'user',
     },
   });
 

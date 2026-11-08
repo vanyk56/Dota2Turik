@@ -17,6 +17,8 @@ import {
   triggerRatingRecalculationAction,
 } from '@/modules/admin/actions';
 import { organizerOverrideResultAction } from '@/modules/matches/actions';
+import { getDotaBotStatus } from '@/modules/lobbies/dota-gc-bot';
+import { SteamBotCard } from '@/components/lobbies/steam-bot-card';
 import { isModeratorOrAdmin, isAdmin } from '@/server/permissions';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -35,13 +37,16 @@ export default async function AdminPage() {
   }
 
   const viewerIsAdmin = isAdmin(viewer);
-  const data = await getAdminDashboardData(viewer);
+  const [data, botStatus] = await Promise.all([
+    getAdminDashboardData(viewer),
+    getDotaBotStatus(),
+  ]);
 
   return (
     <div className="space-y-10">
       <PageHeader
         title="Админ-панель и журнал аудита"
-        subtitle="Управление пользователями, разрешение турнирных споров, версионирование формулы рейтинга и контроль безопасности."
+        subtitle="Управление пользователями, подключение Steam-бота Dota 2, разрешение турнирных споров и формула рейтинга."
         badge={
           <span className="inline-flex items-center gap-1.5 text-xs font-mono text-warning bg-warning/15 px-2.5 py-1 rounded-sm border border-warning/30 uppercase">
             <ShieldCheck className="h-3.5 w-3.5" />
@@ -49,6 +54,14 @@ export default async function AdminPage() {
           </span>
         }
       />
+
+      {viewerIsAdmin && (
+        <SteamBotCard
+          botStatus={botStatus}
+          returnTo="/admin"
+          isAdmin={true}
+        />
+      )}
 
       {/* 1. Open Match Disputes Section (Moderator & Admin) */}
       <section className="space-y-4">

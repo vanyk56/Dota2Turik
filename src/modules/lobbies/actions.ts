@@ -212,7 +212,9 @@ export async function updateLobbyStatusAction(formData: FormData) {
 
 export async function connectSteamBotAction(formData: FormData) {
   const user = await getCurrentUser();
-  if (!user) throw new Error('UNAUTHORIZED');
+  if (!user || user.role !== 'admin') {
+    throw new Error('FORBIDDEN_ADMIN_ONLY');
+  }
 
   const accountName = String(formData.get('accountName') ?? '').trim();
   const password = String(formData.get('password') ?? '').trim();
@@ -225,12 +227,15 @@ export async function connectSteamBotAction(formData: FormData) {
   }
 
   revalidatePath('/lobbies');
+  revalidatePath('/admin');
   revalidatePath(returnTo);
 }
 
 export async function submitSteamGuardAction(formData: FormData) {
   const user = await getCurrentUser();
-  if (!user) throw new Error('UNAUTHORIZED');
+  if (!user || user.role !== 'admin') {
+    throw new Error('FORBIDDEN_ADMIN_ONLY');
+  }
 
   const code = String(formData.get('guardCode') ?? '').trim();
   const returnTo = String(formData.get('returnTo') ?? '/lobbies');
@@ -242,17 +247,21 @@ export async function submitSteamGuardAction(formData: FormData) {
   }
 
   revalidatePath('/lobbies');
+  revalidatePath('/admin');
   revalidatePath(returnTo);
 }
 
 export async function disconnectSteamBotAction(formData: FormData) {
   const user = await getCurrentUser();
-  if (!user) throw new Error('UNAUTHORIZED');
+  if (!user || user.role !== 'admin') {
+    throw new Error('FORBIDDEN_ADMIN_ONLY');
+  }
 
   const returnTo = String(formData.get('returnTo') ?? '/lobbies');
   await disconnectDotaBot();
 
   revalidatePath('/lobbies');
+  revalidatePath('/admin');
   revalidatePath(returnTo);
 }
 
@@ -263,6 +272,7 @@ export async function spawnDotaLobbyWithBotAction(formData: FormData) {
   const lobbyId = z.string().min(1).parse(formData.get('lobbyId'));
   const lobby = await getCustomLobbyById(lobbyId, user.id, user.role);
   if (!lobby) throw new Error('LOBBY_NOT_FOUND');
+  if (!lobby.canManage) throw new Error('FORBIDDEN_LOBBY_HOST_ONLY');
 
   const steamIds64 = lobby.participants.map((p) => p.user.steamId64);
 
@@ -290,6 +300,11 @@ export async function inviteMeWithBotAction(formData: FormData) {
   if (!user) throw new Error('UNAUTHORIZED');
 
   const lobbyId = z.string().min(1).parse(formData.get('lobbyId'));
+  const lobby = await getCustomLobbyById(lobbyId, user.id, user.role);
+  if (!lobby || (!lobby.isParticipant && !lobby.canManage)) {
+    throw new Error('NOT_IN_LOBBY');
+  }
+
   botInvitePlayerToDotaLobby(user.steamId64);
 
   revalidatePath(`/lobbies/${lobbyId}`);

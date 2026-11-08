@@ -1,4 +1,4 @@
-// [Phase: v3 / Custom Lobby Bot] Interactive Steam Dota 2 GC Bot Connection, Steam Guard & Auto-Invite Card
+// [Phase: v3 / Custom Lobby Bot] Steam Dota 2 GC Bot Card — Credentials & Disconnect Restricted Strictly to Admin
 import * as React from 'react';
 import {
   Bot,
@@ -40,12 +40,14 @@ export interface SteamBotStatusView {
 export function SteamBotCard({
   botStatus,
   returnTo,
+  isAdmin = false,
   lobbyId,
   canManageLobby = false,
   isParticipant = false,
 }: {
   botStatus: SteamBotStatusView;
   returnTo: string;
+  isAdmin?: boolean;
   lobbyId?: string;
   canManageLobby?: boolean;
   isParticipant?: boolean;
@@ -55,6 +57,11 @@ export function SteamBotCard({
     botStatus.status === 'connecting' || botStatus.status === 'connected_steam';
   const isGuard = botStatus.status === 'awaiting_steam_guard';
   const isError = botStatus.status === 'error';
+
+  // Non-admins only see this card when the bot is ready inside a lobby room
+  if (!isAdmin && (!isReady || !lobbyId)) {
+    return null;
+  }
 
   return (
     <Card
@@ -88,45 +95,45 @@ export function SteamBotCard({
               {isReady && (
                 <span className="inline-flex items-center gap-1 rounded-sm bg-success/15 border border-success/30 px-2 py-0.5 text-[11px] font-semibold text-success">
                   <CheckCircle2 className="h-3 w-3" />
-                  В сети Dota 2 • Аккаунт: {botStatus.accountName}
+                  В сети Dota 2{isAdmin && botStatus.accountName ? ` • ${botStatus.accountName}` : ''}
                 </span>
               )}
-              {isConnecting && (
+              {isAdmin && isConnecting && (
                 <span className="inline-flex items-center gap-1 rounded-sm bg-accent/15 border border-accent/30 px-2 py-0.5 text-[11px] font-semibold text-accent">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   Запуск Dota 2 GC ({botStatus.accountName})...
                 </span>
               )}
-              {isGuard && (
+              {isAdmin && isGuard && (
                 <span className="inline-flex items-center gap-1 rounded-sm bg-warning/15 border border-warning/30 px-2 py-0.5 text-[11px] font-semibold text-warning">
                   <KeyRound className="h-3 w-3" />
-                  Ожидает код Steam Guard
+                  Ожидает код Steam Guard (Только для Админа)
                 </span>
               )}
             </div>
 
             <p className="text-xs text-text-muted mt-0.5">
               {isReady
-                ? 'Бот подключён к серверам Valve: сам создаёт лобби внутри Dota 2 и отправляет приглашение игрокам прямо в игру.'
-                : 'Подключите второй (свободный) аккаунт Steam — бот сам зайдёт в Dota 2, создаст лобби и кинет вам инвайт в игру.'}
+                ? 'Бот подключён к серверам Valve: автоматически создаёт лобби в Dota 2 и отправляет приглашение игрокам прямо в игру.'
+                : 'Панель администратора: подключите второй аккаунт Steam для автоматического создания лобби в Dota 2.'}
             </p>
           </div>
         </div>
 
-        {/* Disconnect / Switch Bot Account Button */}
-        {botStatus.status !== 'disconnected' && (
+        {/* Disconnect Button — STRICTLY ADMIN ONLY */}
+        {isAdmin && botStatus.status !== 'disconnected' && (
           <form action={disconnectSteamBotAction}>
             <input type="hidden" name="returnTo" value={returnTo} />
             <Button type="submit" variant="ghost" size="sm">
               <PowerOff className="h-3.5 w-3.5 text-danger" />
-              Отключить бота
+              Отключить бота (Admin)
             </Button>
           </form>
         )}
       </div>
 
-      {/* STATE 1: Awaiting Steam Guard Code */}
-      {isGuard && (
+      {/* ADMIN ONLY: Awaiting Steam Guard Code */}
+      {isAdmin && isGuard && (
         <form
           action={submitSteamGuardAction}
           className="rounded-md border border-warning/40 bg-bg/90 p-3.5 flex flex-col sm:flex-row sm:items-end justify-between gap-3"
@@ -139,7 +146,7 @@ export function SteamBotCard({
               {botStatus.guardDomain || 'почту / приложение'})
             </div>
             <p className="text-[11px] text-text-muted">
-              Код вводится только 1 раз — после входа бот сохранит токен сессии в базу данных.
+              Код вводится только 1 раз администратором — после входа бот сохранит токен сессии в базу данных.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -157,8 +164,8 @@ export function SteamBotCard({
         </form>
       )}
 
-      {/* STATE 2: Error Alert */}
-      {isError && botStatus.lastError && (
+      {/* ADMIN ONLY: Error Alert */}
+      {isAdmin && isError && botStatus.lastError && (
         <div className="rounded-md border border-danger/40 bg-danger/10 px-3 py-2 text-xs text-danger flex items-center gap-2">
           <ShieldAlert className="h-4 w-4 shrink-0" />
           <span>
@@ -167,7 +174,7 @@ export function SteamBotCard({
         </div>
       )}
 
-      {/* STATE 3: Ready in Dota 2 GC + Inside a Lobby Room */}
+      {/* Ready in Dota 2 GC + Inside a Lobby Room (Visible to Host & Participants for Invites Only) */}
       {isReady && lobbyId && (
         <div className="flex flex-wrap items-center gap-2.5 pt-2 border-t border-glass-border">
           {canManageLobby && (
@@ -198,8 +205,8 @@ export function SteamBotCard({
         </div>
       )}
 
-      {/* STATE 4: Disconnected or Error -> Form to Connect Bot Account */}
-      {(botStatus.status === 'disconnected' || isError) && (
+      {/* ADMIN ONLY: Connect Bot Account Form */}
+      {isAdmin && (botStatus.status === 'disconnected' || isError) && (
         <form
           action={connectSteamBotAction}
           className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-glass-border items-end"
@@ -207,7 +214,7 @@ export function SteamBotCard({
           <input type="hidden" name="returnTo" value={returnTo} />
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wider text-text-muted mb-1">
-              Логин второго аккаунта Steam (для бота) *
+              Логин второго аккаунта Steam (только для Админа) *
             </label>
             <Input
               name="accountName"

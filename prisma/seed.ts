@@ -90,6 +90,25 @@ async function main() {
     })
     .catch(() => null);
 
+  // 5b. Ensure the first real Steam user (platform owner, e.g. garry) has 'admin' role
+  const adminCount = await prisma.user
+    .count({ where: { role: 'admin' } })
+    .catch(() => 0);
+  if (adminCount === 0) {
+    const firstRealUser = await prisma.user
+      .findFirst({ orderBy: { createdAt: 'asc' } })
+      .catch(() => null);
+    if (firstRealUser) {
+      await prisma.user
+        .update({
+          where: { id: firstRealUser.id },
+          data: { role: 'admin' },
+        })
+        .catch(() => null);
+      console.log(`👑 Promoted platform owner ${firstRealUser.nickname} to admin.`);
+    }
+  }
+
   // 6. Normalize legacy region codes (EEU/WEU -> EU, NA -> US, SEA -> ASIA) on real teams & tournaments
   await prisma.team
     .updateMany({

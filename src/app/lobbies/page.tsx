@@ -82,7 +82,13 @@ export default async function LobbiesPage({
         }
       />
 
-      {user && <SteamBotCard botStatus={botStatus} returnTo="/lobbies" />}
+      {user?.role === 'admin' && (
+        <SteamBotCard
+          botStatus={botStatus}
+          returnTo="/lobbies"
+          isAdmin={true}
+        />
+      )}
 
       <form method="GET" action="/lobbies">
         <FilterBar>

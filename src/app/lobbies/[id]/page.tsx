@@ -161,6 +161,7 @@ export default async function LobbyDetailPage({
         <SteamBotCard
           botStatus={botStatus}
           returnTo={`/lobbies/${lobby.id}`}
+          isAdmin={user.role === 'admin'}
           lobbyId={lobby.id}
           canManageLobby={lobby.canManage}
           isParticipant={lobby.isParticipant}
